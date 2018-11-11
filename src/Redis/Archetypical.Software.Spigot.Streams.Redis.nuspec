@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>Archetypical.Software.Spigot.Streams.Redis</id>
+    <version>$version$</version>
+    <authors>Archetypical.Software</authors>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>
+      A Spigot Stream implementation utilizing Redis Pub Sub.
+    </description>
+    <dependencies>
+      <dependency id="Archetypical.Software.Spigot" version="1.0.2" />
+      <dependency id="StackExchange.Redis" version="2.0.513" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="AWS\bin\Release\netstandard2.0\Archetypical.Software.Spigot.Streams.Redis.dll" target="lib\netstandard2.0\Archetypical.Software.Spigot.Streams.Redis.dll" />
+    <file src="AWS\bin\Release\netstandard2.0\Archetypical.Software.Spigot.Streams.Redis.xml" target="lib\netstandard2.0\Archetypical.Software.Spigot.Streams.Redis.xml" />
+  </files>
+</package>

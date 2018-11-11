@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>Archetypical.Software.Spigot.Streams.AWS</id>
+    <version>$version$</version>
+    <authors>Archetypical.Software</authors>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>
+      A Spigot Stream implementation that interfaces with AWS and supports both SNS
+      (https://docs.aws.amazon.com/sdk-for-net/v2/developer-guide/sns-apis-intro.html)
+      and Kinesis (https://docs.aws.amazon.com/streams/latest/dev/kinesis-record-processor-implementation-app-dotnet.html).
+
+      Use SnsStream for lower volume streams and KinesisStream for higher volumes.
+
+      Amazon Simple Notification Service
+      Amazon Simple Notification Service (SNS) is a highly available, durable, secure, fully managed pub/sub messaging service that enables you to decouple microservices, distributed systems, and serverless applications. Amazon SNS provides topics for high-throughput, push-based, many-to-many messaging
+
+      Amazon Kinesis:
+      Amazon Kinesis makes it easy to collect, process, and analyze real-time, streaming data so you can get timely insights and react quickly to new information. Amazon Kinesis offers key capabilities to cost-effectively process streaming data at any scale, along with the flexibility to choose the tools that best suit the requirements of your application.
+    </description>
+    <dependencies>
+      <dependency id="Archetypical.Software.Spigot" version="1.0.2" />
+      <dependency id="AWSSDK.Core" version="3.3.29" />
+      <dependency id="AWSSDK.Kinesis" version="3.3.6" />
+      <dependency id="AWSSDK.SimpleNotificationService" version="3.3.2" />
+      <dependency id="Newtonsoft.JSON" version="11.0.2" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="AWS\bin\Release\netstandard2.0\Archetypical.Software.Spigot.Streams.AWS.dll" target="lib\netstandard2.0\Archetypical.Software.Spigot.Streams.AWS.dll" />
+    <file src="AWS\bin\Release\netstandard2.0\Archetypical.Software.Spigot.Streams.AWS.xml" target="lib\netstandard2.0\Archetypical.Software.Spigot.Streams.AWS.xml" />
+  </files>
+</package>

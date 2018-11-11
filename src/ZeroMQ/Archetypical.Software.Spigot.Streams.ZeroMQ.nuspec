@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>Archetypical.Software.Spigot.Streams.ZeroMQ</id>
+    <version>$version$</version>
+    <authors>Archetypical.Software</authors>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>
+      A Spigot Stream implementation over 0MQ (ZeroMQ). This implementation utilizes XPUB/XSUB. The intermediary should be provided by the consumer of this stream
+    </description>
+    <dependencies>
+      <dependency id="Archetypical.Software.Spigot" version="1.0.2" />
+      <dependency id="NetMQ" version="4.0.0.1" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="AWS\bin\Release\netstandard2.0\Archetypical.Software.Spigot.Streams.ZeroMQ.dll" target="lib\netstandard2.0\Archetypical.Software.Spigot.Streams.ZeroMQ.dll" />
+    <file src="AWS\bin\Release\netstandard2.0\Archetypical.Software.Spigot.Streams.ZeroMQ.xml" target="lib\netstandard2.0\Archetypical.Software.Spigot.Streams.ZeroMQ.xml" />
+  </files>
+</package>

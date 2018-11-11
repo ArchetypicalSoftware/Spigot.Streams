@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>Archetypical.Software.Spigot.Streams.GoogleCloud</id>
+    <version>$version$</version>
+    <authors>Archetypical.Software</authors>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>
+      A Spigot
+    </description>
+    <dependencies>
+      <dependency id="Archetypical.Software.Spigot" version="1.0.2" />
+      <dependency id="Google.Cloud.PubSub.V1" version="1.0.0" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="AWS\bin\Release\netstandard2.0\Archetypical.Software.Spigot.Streams.GoogleCloud.dll" target="lib\netstandard2.0\Archetypical.Software.Spigot.Streams.GoogleCloud.dll" />
+    <file src="AWS\bin\Release\netstandard2.0\Archetypical.Software.Spigot.Streams.GoogleCloud.xml" target="lib\netstandard2.0\Archetypical.Software.Spigot.Streams.GoogleCloud.xml" />
+  </files>
+</package>

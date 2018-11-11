@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Archetypical.Software.Spigot" Version="1.0.2" />
+    <PackageReference Include="AWSSDK.Core" Version="3.3.29.3" />
+    <PackageReference Include="AWSSDK.Kinesis" Version="3.3.6.16" />
+    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.3.2.5" />
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+  </ItemGroup>
+
+</Project>

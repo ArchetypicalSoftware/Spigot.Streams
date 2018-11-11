@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>Archetypical.Software.Spigot.Streams.Azure</id>
+    <version>$version$</version>
+    <authors>Archetypical.Software</authors>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>
+      A Spigot Stream implementation that interfaces with Azure Service Bus (https://docs.microsoft.com/en-us/dotnet/azure/)
+
+      Azure Service Bus
+      Depend on Azure Service Bus when you need highly-reliable cloud messaging service between applications and services, even when one or more is offline. Available in every Azure region, this fully-managed service eliminates the burdens of server management and licensing. Asynchronous operations give you flexible, brokered messaging between client and server, along with structured first-in, first-out (FIFO) messaging, and publish/subscribe capabilities—excellent for tasks like order processing.
+    </description>
+    <dependencies>
+      <dependency id="Archetypical.Software.Spigot" version="1.0.2" />
+      <dependency id="Microsoft.Azure.ServiceBus" version="3.1.1" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="AWS\bin\Release\netstandard2.0\Archetypical.Software.Spigot.Streams.Azure.dll" target="lib\netstandard2.0\Archetypical.Software.Spigot.Streams.Azure.dll" />
+    <file src="AWS\bin\Release\netstandard2.0\Archetypical.Software.Spigot.Streams.Azure.xml" target="lib\netstandard2.0\Archetypical.Software.Spigot.Streams.Azure.xml" />
+  </files>
+</package>

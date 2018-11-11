@@ -1,0 +1,91 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27703.2026
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{DF4675E5-8B96-4EF9-9380-369B9159A57C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Redis", "Redis", "{670631D0-E17E-4B50-8D6C-8DD630BD51EA}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ZeroMQ", "ZeroMQ", "{BAEA18EC-D8CB-4208-99E0-849FBD9245AE}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Azure", "Azure", "{49C98320-8703-48FD-A5EB-1E1F735F1B22}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AWS", "AWS", "{234E52E8-5F31-497B-9593-149AF03E2111}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Archetypical.Software.Spigot.Streams.ZeroMQ", "ZeroMQ\Archetypical.Software.Spigot.Streams.ZeroMQ.csproj", "{9E40EE39-B8B2-4495-B167-8E187714C2DA}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Archetypical.Software.Spigot.Streams.Redis", "Redis\Archetypical.Software.Spigot.Streams.Redis.csproj", "{A0DE5FB8-F643-44BD-BE2D-7B5C38C4617B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Archetypical.Software.Spigot.Streams.Azure", "Azure\Archetypical.Software.Spigot.Streams.Azure.csproj", "{F601F3F1-1CA3-4B00-BD8B-8CD914498294}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Archetypical.Software.Spigot.Streams.AWS", "AWS\Archetypical.Software.Spigot.Streams.AWS.csproj", "{74C3515A-D7AF-45ED-AF05-E9CDC5A547BC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Spigot.Tests", "Tests\Spigot.Tests\Spigot.Tests.csproj", "{1D2D406B-8538-41B8-B99D-F971027C520C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Spigot.Tests.Load", "Tests\Spigot.Tests.Load\Spigot.Tests.Load.csproj", "{AD4D84F5-FCA9-4F80-A7B1-7A6206BBF28F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Google Cloud", "Google Cloud", "{92C5879B-5434-4A14-9C64-7C09B9EA6442}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "RabbitMQ", "RabbitMQ", "{67986113-8715-4F24-8C27-9431FAD1AB91}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Archetypical.Software.Spigot.Streams.GoogleCloud", "GoogleCloud\Archetypical.Software.Spigot.Streams.GoogleCloud.csproj", "{2B7FBA37-21FF-418A-B2EF-9C79C2AE184C}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Archetypical.Software.Spigot.Streams.RabbitMq", "RabbitMQ\Archetypical.Software.Spigot.Streams.RabbitMq.csproj", "{32D1EAE7-4C07-4892-8AC1-6DFF3D0E0770}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9E40EE39-B8B2-4495-B167-8E187714C2DA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9E40EE39-B8B2-4495-B167-8E187714C2DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9E40EE39-B8B2-4495-B167-8E187714C2DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9E40EE39-B8B2-4495-B167-8E187714C2DA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A0DE5FB8-F643-44BD-BE2D-7B5C38C4617B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A0DE5FB8-F643-44BD-BE2D-7B5C38C4617B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A0DE5FB8-F643-44BD-BE2D-7B5C38C4617B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A0DE5FB8-F643-44BD-BE2D-7B5C38C4617B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F601F3F1-1CA3-4B00-BD8B-8CD914498294}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F601F3F1-1CA3-4B00-BD8B-8CD914498294}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F601F3F1-1CA3-4B00-BD8B-8CD914498294}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F601F3F1-1CA3-4B00-BD8B-8CD914498294}.Release|Any CPU.Build.0 = Release|Any CPU
+		{74C3515A-D7AF-45ED-AF05-E9CDC5A547BC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{74C3515A-D7AF-45ED-AF05-E9CDC5A547BC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{74C3515A-D7AF-45ED-AF05-E9CDC5A547BC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{74C3515A-D7AF-45ED-AF05-E9CDC5A547BC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1D2D406B-8538-41B8-B99D-F971027C520C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1D2D406B-8538-41B8-B99D-F971027C520C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1D2D406B-8538-41B8-B99D-F971027C520C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1D2D406B-8538-41B8-B99D-F971027C520C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AD4D84F5-FCA9-4F80-A7B1-7A6206BBF28F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AD4D84F5-FCA9-4F80-A7B1-7A6206BBF28F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AD4D84F5-FCA9-4F80-A7B1-7A6206BBF28F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AD4D84F5-FCA9-4F80-A7B1-7A6206BBF28F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2B7FBA37-21FF-418A-B2EF-9C79C2AE184C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2B7FBA37-21FF-418A-B2EF-9C79C2AE184C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2B7FBA37-21FF-418A-B2EF-9C79C2AE184C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2B7FBA37-21FF-418A-B2EF-9C79C2AE184C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{32D1EAE7-4C07-4892-8AC1-6DFF3D0E0770}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{32D1EAE7-4C07-4892-8AC1-6DFF3D0E0770}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{32D1EAE7-4C07-4892-8AC1-6DFF3D0E0770}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{32D1EAE7-4C07-4892-8AC1-6DFF3D0E0770}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{9E40EE39-B8B2-4495-B167-8E187714C2DA} = {BAEA18EC-D8CB-4208-99E0-849FBD9245AE}
+		{A0DE5FB8-F643-44BD-BE2D-7B5C38C4617B} = {670631D0-E17E-4B50-8D6C-8DD630BD51EA}
+		{F601F3F1-1CA3-4B00-BD8B-8CD914498294} = {49C98320-8703-48FD-A5EB-1E1F735F1B22}
+		{74C3515A-D7AF-45ED-AF05-E9CDC5A547BC} = {234E52E8-5F31-497B-9593-149AF03E2111}
+		{1D2D406B-8538-41B8-B99D-F971027C520C} = {DF4675E5-8B96-4EF9-9380-369B9159A57C}
+		{AD4D84F5-FCA9-4F80-A7B1-7A6206BBF28F} = {DF4675E5-8B96-4EF9-9380-369B9159A57C}
+		{2B7FBA37-21FF-418A-B2EF-9C79C2AE184C} = {92C5879B-5434-4A14-9C64-7C09B9EA6442}
+		{32D1EAE7-4C07-4892-8AC1-6DFF3D0E0770} = {67986113-8715-4F24-8C27-9431FAD1AB91}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {7C89E520-A431-470B-896F-F0A2B04BE761}
+	EndGlobalSection
+EndGlobal
