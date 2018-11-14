@@ -145,6 +145,16 @@ namespace Spigot.Tests
         }
 
         [Fact]
+        [Category("Kafka")]
+        public async Task Kafka_PubSub_Basic_Test()
+        {
+            using (var kafka = Archetypical.Software.Spigot.Streams.Kafka.KafkaStream.Build(settings => { }))
+            {
+                TestStream(kafka);
+            }
+        }
+
+        [Fact]
         [Category("ZeroMQ")]
         public async Task ZeroMQ_PubSub_Basic_Test()
         {

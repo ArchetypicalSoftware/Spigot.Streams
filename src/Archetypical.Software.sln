@@ -33,6 +33,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Archetypical.Software.Spigo
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Archetypical.Software.Spigot.Streams.RabbitMq", "RabbitMQ\Archetypical.Software.Spigot.Streams.RabbitMq.csproj", "{32D1EAE7-4C07-4892-8AC1-6DFF3D0E0770}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Kafka", "Kafka", "{F4C7F744-B016-4D69-9546-8FC6B85AFE52}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Archetypical.Software.Spigot.Streams.Kafka", "Kafka\Archetypical.Software.Spigot.Streams.Kafka.csproj", "{15A5E728-47CE-427A-B4FC-C061BAD641DC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -71,6 +75,10 @@ Global
 		{32D1EAE7-4C07-4892-8AC1-6DFF3D0E0770}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{32D1EAE7-4C07-4892-8AC1-6DFF3D0E0770}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{32D1EAE7-4C07-4892-8AC1-6DFF3D0E0770}.Release|Any CPU.Build.0 = Release|Any CPU
+		{15A5E728-47CE-427A-B4FC-C061BAD641DC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{15A5E728-47CE-427A-B4FC-C061BAD641DC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{15A5E728-47CE-427A-B4FC-C061BAD641DC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{15A5E728-47CE-427A-B4FC-C061BAD641DC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -84,6 +92,7 @@ Global
 		{AD4D84F5-FCA9-4F80-A7B1-7A6206BBF28F} = {DF4675E5-8B96-4EF9-9380-369B9159A57C}
 		{2B7FBA37-21FF-418A-B2EF-9C79C2AE184C} = {92C5879B-5434-4A14-9C64-7C09B9EA6442}
 		{32D1EAE7-4C07-4892-8AC1-6DFF3D0E0770} = {67986113-8715-4F24-8C27-9431FAD1AB91}
+		{15A5E728-47CE-427A-B4FC-C061BAD641DC} = {F4C7F744-B016-4D69-9546-8FC6B85AFE52}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7C89E520-A431-470B-896F-F0A2B04BE761}
