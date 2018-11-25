@@ -11,9 +11,9 @@ namespace Archetypical.Software.Spigot.Streams.Kafka
 
         private CancellationTokenSource cancellationTokenSource;
 
-        private Consumer consumer;
+        private IConsumer<Ignore, byte[]> consumer;
 
-        private Producer producer;
+        private IProducer<Null, byte[]> producer;
 
         private KafkaStream()
         {
@@ -26,12 +26,12 @@ namespace Archetypical.Software.Spigot.Streams.Kafka
 
         public event EventHandler<byte[]> DataArrived;
 
-        public static KafkaStream Build(Action<KafkaSettings> builder)
+        public async static Task<KafkaStream> BuildAsync(Action<KafkaSettings> builder)
         {
             var settings = new KafkaSettings();
             builder(settings);
             var instance = new KafkaStream();
-            instance.Init(settings);
+            await instance.Init(settings);
             return instance;
         }
 
@@ -45,31 +45,71 @@ namespace Archetypical.Software.Spigot.Streams.Kafka
         {
             try
             {
-                producer.ProduceAsync(_settings.TopicName, null, data).GetAwaiter().GetResult();
-                return true;
+                var waitHandle = new AutoResetEvent(false);
+                bool success = false; ;
+                Action<DeliveryReportResult<Null, byte[]>> handler = r =>
+                {
+                    success = !r.Error.IsError;
+                    waitHandle.Set();
+                };
+
+                var msg = new Message<Null, byte[]>() { Value = data };
+                producer.BeginProduce(_settings.Topic.Name, msg, handler);
+                producer.Flush(TimeSpan.FromMilliseconds(1000));
+                waitHandle.WaitOne(TimeSpan.FromMilliseconds(10000));
+                return success;
             }
-            catch (Exception)
+            catch (Exception e)
             {
                 return false;
             }
         }
 
-        private void Init(KafkaSettings settings)
+        private async Task Init(KafkaSettings settings)
         {
             cancellationTokenSource = new CancellationTokenSource();
             _settings = settings;
-            producer = new Producer(settings.ProducerConfig, settings.ManualPoll, settings.DisableDeliveryReports);
-            consumer = new Consumer(settings.Consumeronfig);
-            consumer.OnMessage += (o, e) => DataArrived?.Invoke(this, e.Value); ;
-            consumer.Subscribe(settings.TopicName);
+            producer = new Producer<Null, byte[]>(settings.ProducerConfig);
+            producer.OnError += OnError;
+            consumer = new Consumer<Ignore, byte[]>(settings.ConsumerConfig);
+            consumer.OnError += OnError;
+            //var client = new AdminClient(settings.ProducerConfig);
+
+            //await client.CreateTopicsAsync(new List<TopicSpecification>{new TopicSpecification
+            //{
+            //    Name = settings.Topic.Name,
+            //    NumPartitions = settings.Topic.NumberOfPartitions,
+            //}}, new CreateTopicsOptions
+            //{
+            //});
+
+            consumer.Subscribe(settings.Topic.Name);
+            consumer?.Consume(TimeSpan.FromMilliseconds(100));
+
             Task.Run(() => PollerJob());
+        }
+
+        private void OnError(object sender, ErrorEvent e)
+        {
+            throw new ArgumentException(e.Reason, e.Code.GetReason());
         }
 
         private void PollerJob()
         {
             while (!cancellationTokenSource.IsCancellationRequested)
             {
-                consumer?.Poll(100);
+                try
+                {
+                    var consumed = consumer?.Consume(TimeSpan.FromMilliseconds(100));
+                    if (consumed != null)
+                    {
+                        DataArrived?.Invoke(this, consumed.Value);
+                    }
+                }
+                catch (Exception e)
+                {
+                    //
+                }
             }
         }
 

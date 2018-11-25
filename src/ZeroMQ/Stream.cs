@@ -1,6 +1,7 @@
 ﻿using NetMQ;
 using NetMQ.Sockets;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Archetypical.Software.Spigot.Streams.ZeroMQ
@@ -11,7 +12,8 @@ namespace Archetypical.Software.Spigot.Streams.ZeroMQ
     public class Stream : ISpigotStream, IDisposable
     {
         private ZeroMqSettings _settings;
-        private NetMQPoller poller;
+        private CancellationTokenSource tokenSource;
+        private Task SubscribingTask;
         private PublisherSocket publisher;
         private SubscriberSocket subscriber;
 
@@ -52,7 +54,11 @@ namespace Archetypical.Software.Spigot.Streams.ZeroMQ
 
         private void ApplySocketOptions(SocketOptions socketOptions, SocketOptionSettings settingsOptions)
         {
-            if (settingsOptions == null) return;
+            if (settingsOptions == null)
+            {
+                return;
+            }
+
             socketOptions.Affinity = settingsOptions.Affinity;
             socketOptions.Backlog = settingsOptions.Backlog;
             socketOptions.DelayAttachOnConnect = settingsOptions.DelayAttachOnConnect;
@@ -79,7 +85,7 @@ namespace Archetypical.Software.Spigot.Streams.ZeroMQ
 
         private async Task Init(ZeroMqSettings settings)
         {
-            await Task.Yield();
+            tokenSource = new CancellationTokenSource();
             _settings = settings;
             publisher = new PublisherSocket();
             publisher.Connect(settings.XSubscriberSocketConnectionString);
@@ -88,23 +94,21 @@ namespace Archetypical.Software.Spigot.Streams.ZeroMQ
             ApplySocketOptions(publisher.Options, settings.PublishingSocketOptions);
             ApplySocketOptions(subscriber.Options, settings.SubscribingSocketOptions);
             subscriber.Subscribe(settings.TopicName);
-            poller = new NetMQPoller { subscriber };
-            poller.RunAsync();
-            subscriber.ReceiveReady += Subscriber_ReceiveReady;
+            SubscribingTask = Task.Factory.StartNew(() => Subscriber_Receive(tokenSource.Token));
         }
 
         private void ReleaseUnmanagedResources()
         {
-            poller.Stop();
+            tokenSource.Cancel(false);
             publisher.Close();
             subscriber.Close();
             publisher.Dispose();
             subscriber.Dispose();
         }
 
-        private void Subscriber_ReceiveReady(object sender, NetMQSocketEventArgs e)
+        private void Subscriber_Receive(CancellationToken token)
         {
-            if (e.IsReadyToReceive)
+            while (!token.IsCancellationRequested)
             {
                 bool more; byte[] bytes;
                 do

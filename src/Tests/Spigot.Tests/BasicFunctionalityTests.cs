@@ -128,9 +128,48 @@ namespace Spigot.Tests
         public async Task RabbitMQ_PubSub_Basic_Test()
         {
             using (var rabbitMq =
-                await Archetypical.Software.Spigot.Streams.RabbitMq.RabbitMqStream.BuildAsync(settings => { }))
+                await Archetypical.Software.Spigot.Streams.RabbitMq.RabbitMqStream.BuildAsync(settings =>
+                {
+                    settings.ConnectionFactory = new RabbitMQ.Client.ConnectionFactory
+                    {
+                        HostName = "barnacle.rmq.cloudamqp.com",
+                        UserName = "lgtephse",
+                        Password = "IGTvZ0MkS2bxBFY4bODO_LyWDODMF3yZ",
+                        VirtualHost = "lgtephse"
+                    };
+                }))
             {
                 TestStream(rabbitMq);
+            }
+        }
+
+        [Fact]
+        [Category("Rabbit MQ")]
+        public async Task RabbitMQ_PubSub_MultiStream_Test()
+        {
+            using (var rabbitMq1 =
+                await Archetypical.Software.Spigot.Streams.RabbitMq.RabbitMqStream.BuildAsync(settings =>
+                {
+                    settings.ConnectionFactory = new RabbitMQ.Client.ConnectionFactory
+                    {
+                        HostName = "barnacle.rmq.cloudamqp.com",
+                        UserName = "lgtephse",
+                        Password = "IGTvZ0MkS2bxBFY4bODO_LyWDODMF3yZ",
+                        VirtualHost = "lgtephse"
+                    };
+                })) using (var rabbitMq2 =
+                await Archetypical.Software.Spigot.Streams.RabbitMq.RabbitMqStream.BuildAsync(settings =>
+                {
+                    settings.ConnectionFactory = new RabbitMQ.Client.ConnectionFactory
+                    {
+                        HostName = "barnacle.rmq.cloudamqp.com",
+                        UserName = "lgtephse",
+                        Password = "IGTvZ0MkS2bxBFY4bODO_LyWDODMF3yZ",
+                        VirtualHost = "lgtephse"
+                    };
+                }))
+            {
+                TestMultipleInstancesOfStream(rabbitMq1, rabbitMq2);
             }
         }
 
@@ -138,9 +177,34 @@ namespace Spigot.Tests
         [Category("Redis")]
         public async Task Redis_PubSub_Basic_Test()
         {
-            using (var redis = await Archetypical.Software.Spigot.Streams.Redis.Stream.BuildAsync(settings => { }))
+            using (var redis = await Archetypical.Software.Spigot.Streams.Redis.Stream.BuildAsync(settings =>
+                {
+                    settings.ConfigurationOptions.EndPoints.Add(
+                        "redis-13640.c10.us-east-1-2.ec2.cloud.redislabs.com:13640");
+                    settings.ConfigurationOptions.Password = "VUeuFKLOqWqvpvRfCnKG0a2ACXbIEiXK";
+                }))
             {
                 TestStream(redis);
+            }
+        }
+
+        [Fact]
+        [Category("Redis")]
+        public async Task Redis_PubSub_MultipleStream_Test()
+        {
+            using (var redis1 = await Archetypical.Software.Spigot.Streams.Redis.Stream.BuildAsync(settings =>
+            {
+                settings.ConfigurationOptions.EndPoints.Add(
+                    "redis-13640.c10.us-east-1-2.ec2.cloud.redislabs.com:13640");
+                settings.ConfigurationOptions.Password = "VUeuFKLOqWqvpvRfCnKG0a2ACXbIEiXK";
+            })) using (var redis2 = await Archetypical.Software.Spigot.Streams.Redis.Stream.BuildAsync(settings =>
+            {
+                settings.ConfigurationOptions.EndPoints.Add(
+                    "redis-13640.c10.us-east-1-2.ec2.cloud.redislabs.com:13640");
+                settings.ConfigurationOptions.Password = "VUeuFKLOqWqvpvRfCnKG0a2ACXbIEiXK";
+            }))
+            {
+                TestMultipleInstancesOfStream(redis1, redis2);
             }
         }
 
@@ -148,7 +212,35 @@ namespace Spigot.Tests
         [Category("Kafka")]
         public async Task Kafka_PubSub_Basic_Test()
         {
-            using (var kafka = Archetypical.Software.Spigot.Streams.Kafka.KafkaStream.Build(settings => { }))
+            using (var kafka = await Archetypical.Software.Spigot.Streams.Kafka.KafkaStream.BuildAsync(settings =>
+            {
+                var brokers = "velomobile-01.srvs.cloudkafka.com:9094,velomobile-03.srvs.cloudkafka.com:9094,velomobile-02.srvs.cloudkafka.com:9094";
+                //settings.Topic.Name = "wjbna946-spigot";
+                settings.Topic.Name = "wjbna946-default";
+                //settings.ProducerConfig.BatchNumMessages = 1000;
+                //settings.ProducerConfig.QueueBufferingMaxMessages = 100;
+                //settings.ProducerConfig.MessageTimeoutMs = 100;
+                //settings.ProducerConfig.Acks = 1;
+                //settings.ProducerConfig.SessionTimeoutMs = 6000;
+                //settings.ProducerConfig.HeartbeatIntervalMs = 60000;
+
+                settings.ProducerConfig.BootstrapServers = brokers;
+                settings.ProducerConfig.SaslUsername = "wjbna946";
+                settings.ProducerConfig.SaslPassword = "szI-QN7RfwqKFaSt-p1AaBJRAGFMIMcx";
+
+                settings.ProducerConfig.SaslMechanism = Confluent.Kafka.SaslMechanismType.ScramSha256;
+                settings.ProducerConfig.SecurityProtocol = Confluent.Kafka.SecurityProtocolType.Sasl_Ssl;
+                //var cert = new FileInfo("karafka.crt");
+                //if (cert.Exists)
+                //{
+                //    settings.ProducerConfig.SslCertificateLocation = cert.FullName;
+                //}
+
+                settings.ProducerConfig.Debug = "generic,broker,topic,metadata,feature,queue,protocol,msg,security,all";
+
+                settings.ConsumerConfig = new Confluent.Kafka.ConsumerConfig(settings.ProducerConfig);
+                settings.ConsumerConfig.GroupId = "wjbna946-Spigot";
+            }))
             {
                 TestStream(kafka);
             }
@@ -160,14 +252,39 @@ namespace Spigot.Tests
         {
             using (XpubXsubIntermediary.Start())
             {
-                await Task.Delay(500);
                 using (var netmq = await Archetypical.Software.Spigot.Streams.ZeroMQ.Stream.BuildAsync(settings =>
                 {
                     settings.XPublisherSocketConnectionString = @"tcp://127.0.0.1:1234";
                     settings.XSubscriberSocketConnectionString = @"tcp://127.0.0.1:5677";
                 }))
                 {
+                    logger.LogInformation($"Sending is successful: {netmq.TrySend(Guid.NewGuid().ToByteArray())}"); ;
                     TestStream(netmq);
+                }
+            }
+        }
+
+        [Fact]
+        [Category("ZeroMQ")]
+        public async Task ZeroMQ_PubSub_MultipleStream_Test()
+        {
+            using (XpubXsubIntermediary.Start())
+            {
+                await Task.Delay(500);
+                using (var netmq1 = await Archetypical.Software.Spigot.Streams.ZeroMQ.Stream.BuildAsync(settings =>
+                {
+                    settings.XPublisherSocketConnectionString = @"tcp://127.0.0.1:1234";
+                    settings.XSubscriberSocketConnectionString = @"tcp://127.0.0.1:5677";
+                }))
+                {
+                    using (var netmq2 = await Archetypical.Software.Spigot.Streams.ZeroMQ.Stream.BuildAsync(settings =>
+                    {
+                        settings.XPublisherSocketConnectionString = @"tcp://127.0.0.1:1234";
+                        settings.XSubscriberSocketConnectionString = @"tcp://127.0.0.1:5677";
+                    }))
+                    {
+                        TestMultipleInstancesOfStream(netmq1, netmq2);
+                    }
                 }
             }
         }
@@ -175,25 +292,82 @@ namespace Spigot.Tests
         private static void TestStream(ISpigotStream stream)
         {
             Assert.NotNull(stream);
+            Thread.Sleep(100);
             var expected = Guid.NewGuid();
             var dataToSend = expected.ToByteArray();
-            Guid actual = Guid.Empty;
+            var actual = Guid.Empty;
             var signal = new AutoResetEvent(false);
             stream.DataArrived += (sender, bytes) =>
             {
-                if (new Guid(bytes) == expected)
+                if (new Guid(bytes) != expected)
                 {
-                    actual = new Guid(bytes);
-                    signal.Set();
+                    return;
                 }
+
+                actual = new Guid(bytes);
+                signal.Set();
             };
             Thread.Sleep(100);
             var sw = Stopwatch.StartNew();
-            Assert.True(stream.TrySend(dataToSend));
+            Assert.True(stream.TrySend(dataToSend), "Failed to send message on the stream");
             signal.WaitOne(TimeSpan.FromSeconds(2));
             sw.Stop();
             logger.Log(LogLevel.Information, "Roundtrip by {1} in {0}", sw.Elapsed, stream.GetType().FullName);
             Assert.Equal(expected, actual);
+        }
+
+        private static void TestMultipleInstancesOfStream(ISpigotStream streamInstance1, ISpigotStream streamInstance2)
+        {
+            Assert.NotNull(streamInstance1);
+            Assert.NotNull(streamInstance2);
+            var expected1 = Guid.NewGuid();
+            var expected2 = Guid.NewGuid();
+            var dataToSend1 = expected1.ToByteArray();
+            var dataToSend2 = expected2.ToByteArray();
+            Guid actual1 = Guid.Empty;
+            Guid actual2 = Guid.Empty;
+            var signal = new AutoResetEvent(false);
+
+            void OnStreamInstance1OnDataArrived(object sender, byte[] bytes)
+            {
+                if (new Guid(bytes) != expected1)
+                {
+                    return;
+                }
+
+                actual1 = new Guid(bytes);
+                signal.Set();
+            }
+            void OnStreamInstance2OnDataArrived(object sender, byte[] bytes)
+            {
+                if (new Guid(bytes) != expected2)
+                {
+                    return;
+                }
+
+                actual2 = new Guid(bytes);
+                signal.Set();
+            }
+
+            streamInstance1.DataArrived += OnStreamInstance1OnDataArrived;
+
+            Thread.Sleep(100);
+            var sw = Stopwatch.StartNew();
+            Assert.True(streamInstance2.TrySend(dataToSend1));
+            signal.WaitOne(TimeSpan.FromSeconds(2));
+            sw.Stop();
+            logger.Log(LogLevel.Information, "Roundtrip by {1} in {0}", sw.Elapsed, streamInstance1.GetType().FullName);
+            Assert.Equal(expected1, actual1);
+            streamInstance1.DataArrived -= OnStreamInstance1OnDataArrived;
+            streamInstance2.DataArrived += OnStreamInstance2OnDataArrived;
+            signal.Reset();
+            Thread.Sleep(100);
+            sw = Stopwatch.StartNew();
+            Assert.True(streamInstance1.TrySend(dataToSend2));
+            signal.WaitOne(TimeSpan.FromSeconds(2));
+            sw.Stop();
+            logger.Log(LogLevel.Information, "Roundtrip by {1} in {0}", sw.Elapsed, streamInstance2.GetType().FullName);
+            Assert.Equal(expected2, actual2);
         }
     }
 
@@ -217,8 +391,10 @@ namespace Spigot.Tests
             xsubSocket = new XSubscriberSocket("@tcp://127.0.0.1:5677");
             // proxy messages between frontend / backend
             proxy = new Proxy(xsubSocket, xpubSocket);
+
             // blocks indefinitely
             listenter = Task.Factory.StartNew(() => proxy.Start());
+            Thread.Sleep(1000); // time to start up
         }
 
         private XpubXsubIntermediary()

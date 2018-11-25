@@ -67,7 +67,7 @@ namespace Archetypical.Software.Spigot.Streams.RabbitMq
             _settings = settings;
             var factory = settings.ConnectionFactory;
 
-            connection = factory.CreateConnection();
+            connection = factory.CreateConnection("Archetypical.Software.Spigot");
 
             channel = connection.CreateModel();
             channel.QueueDeclare(queue: settings.Queue.Name, durable: settings.Queue.Durable,
