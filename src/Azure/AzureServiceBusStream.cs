@@ -1,7 +1,7 @@
-﻿using System;
-using System.Threading;
+﻿using Microsoft.Azure.ServiceBus;
+using Microsoft.Extensions.Logging;
+using System;
 using System.Threading.Tasks;
-using Microsoft.Azure.ServiceBus;
 
 namespace Archetypical.Software.Spigot.Streams.Azure
 {
@@ -9,17 +9,20 @@ namespace Archetypical.Software.Spigot.Streams.Azure
     {
         private TopicClient client;
         private ISubscriptionClient subscriptionClient;
-        private CancellationTokenSource _cancellationTokenSource;
+        private ILogger<AzureServiceBusStream> Logger;
 
         public bool TrySend(byte[] data)
         {
             try
             {
-                client.SendAsync(new Message(data)).GetAwaiter().GetResult();
+                Logger?.LogDebug("Attempting to send {0} bytes", data.Length);
+                var msg = new Message(data);
+                client.SendAsync(msg).GetAwaiter().GetResult();
                 return true;
             }
             catch (Exception e)
             {
+                Logger?.LogDebug("Error : {0}", e.Message);
                 return false;
             }
         }
@@ -50,9 +53,12 @@ namespace Archetypical.Software.Spigot.Streams.Azure
             // Register the function that processes messages.
             subscriptionClient.RegisterMessageHandler((msg, token) =>
             {
-                if (DataArrived != null)
-                    return Task.Factory.FromAsync(DataArrived.BeginInvoke(this, msg.Body, DataArrived.EndInvoke, null),
-                        DataArrived.EndInvoke);
+                Logger?.LogDebug("Data received with message Id {0}", msg.MessageId);
+                if (DataArrived == null)
+                {
+                    Logger?.LogDebug("Handler is null, skipping Invocation");
+                }
+                DataArrived?.Invoke(this, msg.Body);
                 return Task.FromResult(0);
             }, messageHandlerOptions);
         }
@@ -64,10 +70,11 @@ namespace Archetypical.Software.Spigot.Streams.Azure
 
         private async Task Init(AzureSettings settings)
         {
-            _cancellationTokenSource = new CancellationTokenSource();
+            Logger = settings.Logger;
             settings.ConnectionStringBuilder.EntityPath =
                 settings.ConnectionStringBuilder.EntityPath ?? settings.TopicName;
             var sb = new ServiceBusConnection(settings.ConnectionStringBuilder);
+
             client = new TopicClient(sb, settings.TopicName, settings.RetryPolicy);
             subscriptionClient = new SubscriptionClient(sb, settings.TopicName, settings.SubscriptionName
                 , settings.ReceiveMode, settings.RetryPolicy);
@@ -97,14 +104,5 @@ namespace Archetypical.Software.Spigot.Streams.Azure
         {
             ReleaseUnmanagedResources();
         }
-    }
-
-    public class AzureSettings
-    {
-        public RetryPolicy RetryPolicy { get; set; } = RetryPolicy.Default;
-        public ServiceBusConnectionStringBuilder ConnectionStringBuilder { get; set; }
-        public string TopicName { get; set; }
-        public string SubscriptionName { get; set; }
-        public ReceiveMode ReceiveMode { get; set; } = ReceiveMode.PeekLock;
     }
 }

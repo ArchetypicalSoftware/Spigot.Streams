@@ -1,9 +1,10 @@
-﻿using System;
+﻿using Google.Cloud.PubSub.V1;
+using Google.Protobuf;
+using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Google.Cloud.PubSub.V1;
-using Google.Protobuf;
 
 namespace Archetypical.Software.Spigot.Streams.GoogleCloud
 {
@@ -11,11 +12,24 @@ namespace Archetypical.Software.Spigot.Streams.GoogleCloud
     {
         private CancellationTokenSource _cancellationTokenSource;
 
-        public bool TrySend(byte[] data)
+        private PublisherServiceApiClient publisher;
+
+        private SubscriberClient subscriber;
+
+        private TopicName topicName;
+
+        private ILogger<GoogleCloudPubSubStream> Logger;
+
+        private GoogleCloudPubSubStream()
         {
-            var response = publisher.Publish(topicName, new List<PubsubMessage>() { new PubsubMessage { Data = ByteString.CopyFrom(data) } });
-            return response.MessageIds.Count == 1;
         }
+
+        ~GoogleCloudPubSubStream()
+        {
+            ReleaseUnmanagedResources();
+        }
+
+        public event EventHandler<byte[]> DataArrived;
 
         public static async Task<GoogleCloudPubSubStream> BuildAsync(Action<GoogleCloudSettings> builder)
         {
@@ -26,10 +40,47 @@ namespace Archetypical.Software.Spigot.Streams.GoogleCloud
             return instance;
         }
 
-        private PublisherServiceApiClient publisher; private TopicName topicName; private SubscriberClient subscriber;
+        public void Dispose()
+        {
+            ReleaseUnmanagedResources();
+            GC.SuppressFinalize(this);
+        }
+
+        public bool TrySend(byte[] data)
+        {
+            Logger?.LogDebug("Attempting to send {0} bytes", data.Length);
+            var response = publisher.Publish(topicName, new List<PubsubMessage>() { new PubsubMessage { Data = ByteString.CopyFrom(data) } });
+            Logger?.LogDebug("Successfully sent {0} messages with Ids {1}", response.MessageIds.Count, string.Join(",", response.MessageIds));
+            return response.MessageIds.Count == 1;
+        }
+
+        private async Task<SubscriberClient.Reply> HandleMessageAsync(PubsubMessage msg, CancellationToken cancellationToken)
+        {
+            Logger?.LogTrace("Data arrived messageID:{0}", msg.MessageId);
+            if (DataArrived == null)
+            {
+                Logger?.LogTrace("No handler attached. Auto-acking message");
+                return SubscriberClient.Reply.Ack;
+            }
+
+            try
+            {
+                var bytes = new byte[msg.Data.Length];
+                msg.Data.CopyTo(bytes, 0);
+                DataArrived.Invoke(this, bytes);
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogDebug("Exception: {0}", ex.Message);
+                return SubscriberClient.Reply.Nack;
+            }
+            return SubscriberClient.Reply.Ack;
+        }
 
         private async Task Init(GoogleCloudSettings settings)
         {
+            Logger = settings.Logger;
+
             _cancellationTokenSource = new CancellationTokenSource();
             // Instantiates a client
 
@@ -43,12 +94,12 @@ namespace Archetypical.Software.Spigot.Streams.GoogleCloud
             try
             {
                 Topic topic = publisher.CreateTopic(topicName);
-                Console.WriteLine($"Topic {topic.Name} created.");
+                Logger?.LogInformation($"Topic {topic.Name} created.");
             }
             catch (Grpc.Core.RpcException e)
                 when (e.Status.StatusCode == Grpc.Core.StatusCode.AlreadyExists)
             {
-                Console.WriteLine($"Topic {topicName} already exists.");
+                Logger?.LogInformation($"Topic {topicName} already exists.");
             }
 
             var subscriptionName = new SubscriptionName(settings.ProjectId, settings.SubscriptionName);
@@ -60,52 +111,22 @@ namespace Archetypical.Software.Spigot.Streams.GoogleCloud
             }
             catch (Exception ee)
             {
+                Logger?.LogInformation(ee.Message);
             }
 
             subscriber = await SubscriberClient.CreateAsync(subscriptionName, settings.ClientCreationSettings,
                 settings.SubscriberClientSettings);
-            subscriber.StartAsync(HandleMessageAsync);
-        }
-
-        private async Task<SubscriberClient.Reply> HandleMessageAsync(PubsubMessage msg, CancellationToken cancellationToken)
-        {
-            if (DataArrived != null)
-            {
-                try
+            subscriber.StartAsync(HandleMessageAsync).ContinueWith(t =>
                 {
-                    var bytes = new byte[msg.Data.Length];
-                    msg.Data.CopyTo(bytes, 0);
-                    DataArrived.Invoke(this, bytes);
-                }
-                catch (Exception ex)
-                {
-                    return SubscriberClient.Reply.Nack;
-                }
-            }
-            return SubscriberClient.Reply.Ack;
+                    Logger?.LogError(t.Exception, "An error attempting to handle messages occurred. {0}",
+                        t.Exception.Message);
+                }, TaskContinuationOptions.OnlyOnFaulted);
         }
-
-        private GoogleCloudPubSubStream()
-        {
-        }
-
-        public event EventHandler<byte[]> DataArrived;
 
         private void ReleaseUnmanagedResources()
         {
             subscriber?.StopAsync(_cancellationTokenSource.Token).GetAwaiter().GetResult();
             _cancellationTokenSource.Cancel();
-        }
-
-        public void Dispose()
-        {
-            ReleaseUnmanagedResources();
-            GC.SuppressFinalize(this);
-        }
-
-        ~GoogleCloudPubSubStream()
-        {
-            ReleaseUnmanagedResources();
         }
     }
 }

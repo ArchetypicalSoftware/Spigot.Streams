@@ -7,12 +7,14 @@ using Archetypical.Software.Spigot.Streams.AWS;
 using Archetypical.Software.Spigot.Streams.Azure;
 using Archetypical.Software.Spigot.Streams.GoogleCloud;
 using Microsoft.Azure.ServiceBus;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using NetMQ;
 using NetMQ.Sockets;
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -24,6 +26,7 @@ namespace Spigot.Tests
     {
         private ILoggerFactory factory;
         private static ILogger logger;
+        private IConfigurationRoot config;
 
         public BasicFunctionalityTests(ITestOutputHelper outputHelper)
         {
@@ -36,13 +39,21 @@ namespace Spigot.Tests
                 settings.AddLoggerFactory(factory);
             });
             logger = factory.CreateLogger<BasicFunctionalityTests>();
+
+            config = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("config.json", optional: false, reloadOnChange: false)
+                .Build();
         }
 
         [Fact]
         [Category("AWS")]
         public async Task AWS_Kinesis_Basic_Test()
         {
-            var credentials = new BasicAWSCredentials("AKIAJKNIPBSOX5OZH25Q", "BlSamyco2/nMjLf/nXdc6W8SuWB1Q+cFjGc1Rd4c");
+            var settings = config.GetSection("AWS");
+            var accessToken = settings.GetValue<string>("AccessToken");
+            var secretKey = settings.GetValue<string>("SecretKey");
+            var credentials = new BasicAWSCredentials(accessToken, secretKey);
             using (var kinesisStream = await KinesisStream.BuildAsync(builder =>
             {
                 builder.ClientConfig = new AmazonKinesisConfig
@@ -52,6 +63,7 @@ namespace Spigot.Tests
                 };
                 builder.Credentials = credentials;
                 builder.StreamName = "test";
+                builder.Logger = factory.CreateLogger<KinesisStream>();
             }))
             {
                 TestStream(kinesisStream);
@@ -60,10 +72,46 @@ namespace Spigot.Tests
 
         [Fact]
         [Category("AWS")]
+        public async Task AWS_Kinesis_MultipleStreams_Test()
+        {
+            var settings = config.GetSection("AWS");
+            var accessToken = settings.GetValue<string>("AccessToken");
+            var secretKey = settings.GetValue<string>("SecretKey");
+            var credentials = new BasicAWSCredentials(accessToken, secretKey);
+            using (var kinesisStream1 = await KinesisStream.BuildAsync(builder =>
+            {
+                builder.ClientConfig = new AmazonKinesisConfig
+                {
+                    RegionEndpoint = RegionEndpoint.USEast1,
+                    MaxErrorRetry = 10,
+                };
+                builder.Credentials = credentials;
+                builder.StreamName = "test";
+                builder.Logger = factory.CreateLogger<KinesisStream>();
+            })) using (var kinesisStream2 = await KinesisStream.BuildAsync(builder =>
+            {
+                builder.ClientConfig = new AmazonKinesisConfig
+                {
+                    RegionEndpoint = RegionEndpoint.USEast1,
+                    MaxErrorRetry = 10,
+                };
+                builder.Credentials = credentials;
+                builder.StreamName = "test";
+                builder.Logger = factory.CreateLogger<KinesisStream>();
+            }))
+            {
+                TestMultipleInstancesOfStream(kinesisStream1, kinesisStream2);
+            }
+        }
+
+        [Fact]
+        [Category("AWS")]
         public async Task AWS_Sns_Basic_Test()
         {
-            var credentials = new BasicAWSCredentials("AKIAJKNIPBSOX5OZH25Q", "BlSamyco2/nMjLf/nXdc6W8SuWB1Q+cFjGc1Rd4c");
-            using (var snsStream = await SnsStream.BuildAsync(builder =>
+            var settings = config.GetSection("AWS");
+            var accessToken = settings.GetValue<string>("AccessToken");
+            var secretKey = settings.GetValue<string>("SecretKey");
+            var credentials = new BasicAWSCredentials(accessToken, secretKey); using (var snsStream = await SnsStream.BuildAsync(builder =>
             {
                 builder.AmazonSimpleNotificationServiceConfig = new AmazonSimpleNotificationServiceConfig
                 {
@@ -87,21 +135,57 @@ namespace Spigot.Tests
         [Category("Azure")]
         public async Task Azure_ServiceBus_Basic_Test()
         {
+            var section = config.GetSection("Azure");
             using (var azureStream = await AzureServiceBusStream.BuildAsync(builder =>
-             {
-                 builder.ConnectionStringBuilder = new ServiceBusConnectionStringBuilder
-                 {
-                     EntityPath = "spigottopicname",
-                     SasKeyName = "Spigot",
-                     SasKey = "Z8fyvzywnE3V407/n1CtQPsCPtqz5KJgit7PsiFQeIE=",
-                     TransportType = TransportType.Amqp,
-                     Endpoint = "https://spigot.servicebus.windows.net"
-                 };
-                 builder.TopicName = "spigottopicname";
-                 builder.SubscriptionName = "spigot";
-             }))
+            {
+                builder.Logger = factory.CreateLogger<AzureServiceBusStream>();
+                builder.TopicName = "spigottopicname";
+                builder.ConnectionStringBuilder = new ServiceBusConnectionStringBuilder
+                {
+                    EntityPath = "spigottopicname",
+                    SasKeyName = section.GetValue<string>("SasKeyName"),
+                    SasKey = section.GetValue<string>("SasKey"),
+                    TransportType = TransportType.Amqp,
+                    Endpoint = section.GetValue<string>("Endpoint")
+                };
+            }))
             {
                 TestStream(azureStream);
+            }
+        }
+
+        [Fact]
+        [Category("Azure")]
+        public async Task Azure_ServiceBus_Multiple_Test()
+        {
+            var section = config.GetSection("Azure");
+            using (var azureStream1 = await AzureServiceBusStream.BuildAsync(builder =>
+            {
+                builder.Logger = factory.CreateLogger<AzureServiceBusStream>();
+                builder.TopicName = "spigottopicname";
+                builder.ConnectionStringBuilder = new ServiceBusConnectionStringBuilder
+                {
+                    EntityPath = "spigottopicname",
+                    SasKeyName = section.GetValue<string>("SasKeyName"),
+                    SasKey = section.GetValue<string>("SasKey"),
+                    TransportType = TransportType.Amqp,
+                    Endpoint = section.GetValue<string>("Endpoint")
+                };
+            })) using (var azureStream2 = await AzureServiceBusStream.BuildAsync(builder =>
+            {
+                builder.Logger = factory.CreateLogger<AzureServiceBusStream>();
+                builder.TopicName = "spigottopicname";
+                builder.ConnectionStringBuilder = new ServiceBusConnectionStringBuilder
+                {
+                    EntityPath = "spigottopicname",
+                    SasKeyName = section.GetValue<string>("SasKeyName"),
+                    SasKey = section.GetValue<string>("SasKey"),
+                    TransportType = TransportType.Amqp,
+                    Endpoint = section.GetValue<string>("Endpoint")
+                };
+            }))
+            {
+                TestMultipleInstancesOfStream(azureStream1, azureStream2);
             }
         }
 
@@ -109,12 +193,14 @@ namespace Spigot.Tests
         [Category("Google Cloud")]
         public async Task Google_Cloud_Basic_Test()
         {
+            var section = config.GetSection("GoogleCloud");
             logger.Log(LogLevel.Information,
                 "Google cloud can use a config json stored in an env variable GOOGLE_APPLICATION_CREDENTIALS. That value is {0}",
                 Environment.GetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS"));
             using (var googleCloud = await GoogleCloudPubSubStream.BuildAsync(settings =>
                 {
-                    settings.ProjectId = "crypto-lodge-222219";
+                    settings.ProjectId = section.GetValue<string>("ProjectId");
+                    settings.Logger = factory.CreateLogger<GoogleCloudPubSubStream>();
                 }))
             {
                 {
@@ -124,18 +210,42 @@ namespace Spigot.Tests
         }
 
         [Fact]
+        [Category("Google Cloud")]
+        public async Task Google_Cloud_MultipleStream_Test()
+        {
+            var section = config.GetSection("GoogleCloud");
+            logger.Log(LogLevel.Information,
+                "Google cloud can use a config json stored in an env variable GOOGLE_APPLICATION_CREDENTIALS. That value is {0}",
+                Environment.GetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS"));
+            using (var googleCloud1 = await GoogleCloudPubSubStream.BuildAsync(settings =>
+            {
+                settings.ProjectId = section.GetValue<string>("ProjectId");
+                settings.Logger = factory.CreateLogger<GoogleCloudPubSubStream>();
+            }))
+            using (var googleCloud2 = await GoogleCloudPubSubStream.BuildAsync(settings =>
+            {
+                settings.ProjectId = section.GetValue<string>("ProjectId");
+                settings.Logger = factory.CreateLogger<GoogleCloudPubSubStream>();
+            }))
+            {
+                TestMultipleInstancesOfStream(googleCloud1, googleCloud2);
+            }
+        }
+
+        [Fact]
         [Category("Rabbit MQ")]
         public async Task RabbitMQ_PubSub_Basic_Test()
         {
+            var section = config.GetSection("RabbitMQ");
             using (var rabbitMq =
                 await Archetypical.Software.Spigot.Streams.RabbitMq.RabbitMqStream.BuildAsync(settings =>
                 {
                     settings.ConnectionFactory = new RabbitMQ.Client.ConnectionFactory
                     {
-                        HostName = "barnacle.rmq.cloudamqp.com",
-                        UserName = "lgtephse",
-                        Password = "IGTvZ0MkS2bxBFY4bODO_LyWDODMF3yZ",
-                        VirtualHost = "lgtephse"
+                        HostName = section.GetValue<string>("Hostname"),
+                        UserName = section.GetValue<string>("Username"),
+                        Password = section.GetValue<string>("Password"),
+                        VirtualHost = section.GetValue<string>("VirtualHost")
                     };
                 }))
             {
@@ -147,25 +257,26 @@ namespace Spigot.Tests
         [Category("Rabbit MQ")]
         public async Task RabbitMQ_PubSub_MultiStream_Test()
         {
+            var section = config.GetSection("RabbitMQ");
             using (var rabbitMq1 =
                 await Archetypical.Software.Spigot.Streams.RabbitMq.RabbitMqStream.BuildAsync(settings =>
                 {
                     settings.ConnectionFactory = new RabbitMQ.Client.ConnectionFactory
                     {
-                        HostName = "barnacle.rmq.cloudamqp.com",
-                        UserName = "lgtephse",
-                        Password = "IGTvZ0MkS2bxBFY4bODO_LyWDODMF3yZ",
-                        VirtualHost = "lgtephse"
+                        HostName = section.GetValue<string>("Hostname"),
+                        UserName = section.GetValue<string>("Username"),
+                        Password = section.GetValue<string>("Password"),
+                        VirtualHost = section.GetValue<string>("VirtualHost")
                     };
                 })) using (var rabbitMq2 =
                 await Archetypical.Software.Spigot.Streams.RabbitMq.RabbitMqStream.BuildAsync(settings =>
                 {
                     settings.ConnectionFactory = new RabbitMQ.Client.ConnectionFactory
                     {
-                        HostName = "barnacle.rmq.cloudamqp.com",
-                        UserName = "lgtephse",
-                        Password = "IGTvZ0MkS2bxBFY4bODO_LyWDODMF3yZ",
-                        VirtualHost = "lgtephse"
+                        HostName = section.GetValue<string>("Hostname"),
+                        UserName = section.GetValue<string>("Username"),
+                        Password = section.GetValue<string>("Password"),
+                        VirtualHost = section.GetValue<string>("VirtualHost")
                     };
                 }))
             {
@@ -177,11 +288,11 @@ namespace Spigot.Tests
         [Category("Redis")]
         public async Task Redis_PubSub_Basic_Test()
         {
+            var section = config.GetSection("Redis");
             using (var redis = await Archetypical.Software.Spigot.Streams.Redis.Stream.BuildAsync(settings =>
                 {
-                    settings.ConfigurationOptions.EndPoints.Add(
-                        "redis-13640.c10.us-east-1-2.ec2.cloud.redislabs.com:13640");
-                    settings.ConfigurationOptions.Password = "VUeuFKLOqWqvpvRfCnKG0a2ACXbIEiXK";
+                    settings.ConfigurationOptions.EndPoints.Add(section.GetValue<string>("Endpoint"));
+                    settings.ConfigurationOptions.Password = section.GetValue<string>("Password");
                 }))
             {
                 TestStream(redis);
@@ -192,16 +303,15 @@ namespace Spigot.Tests
         [Category("Redis")]
         public async Task Redis_PubSub_MultipleStream_Test()
         {
+            var section = config.GetSection("Redis");
             using (var redis1 = await Archetypical.Software.Spigot.Streams.Redis.Stream.BuildAsync(settings =>
             {
-                settings.ConfigurationOptions.EndPoints.Add(
-                    "redis-13640.c10.us-east-1-2.ec2.cloud.redislabs.com:13640");
-                settings.ConfigurationOptions.Password = "VUeuFKLOqWqvpvRfCnKG0a2ACXbIEiXK";
+                settings.ConfigurationOptions.EndPoints.Add(section.GetValue<string>("Endpoint"));
+                settings.ConfigurationOptions.Password = section.GetValue<string>("Password");
             })) using (var redis2 = await Archetypical.Software.Spigot.Streams.Redis.Stream.BuildAsync(settings =>
             {
-                settings.ConfigurationOptions.EndPoints.Add(
-                    "redis-13640.c10.us-east-1-2.ec2.cloud.redislabs.com:13640");
-                settings.ConfigurationOptions.Password = "VUeuFKLOqWqvpvRfCnKG0a2ACXbIEiXK";
+                settings.ConfigurationOptions.EndPoints.Add(section.GetValue<string>("Endpoint"));
+                settings.ConfigurationOptions.Password = section.GetValue<string>("Password");
             }))
             {
                 TestMultipleInstancesOfStream(redis1, redis2);
@@ -212,11 +322,11 @@ namespace Spigot.Tests
         [Category("Kafka")]
         public async Task Kafka_PubSub_Basic_Test()
         {
+            var section = config.GetSection("Kafka");
             using (var kafka = await Archetypical.Software.Spigot.Streams.Kafka.KafkaStream.BuildAsync(settings =>
             {
-                var brokers = "velomobile-01.srvs.cloudkafka.com:9094,velomobile-03.srvs.cloudkafka.com:9094,velomobile-02.srvs.cloudkafka.com:9094";
-                //settings.Topic.Name = "wjbna946-spigot";
-                settings.Topic.Name = "wjbna946-default";
+                var brokers = section.GetValue<string>("Brokers");
+                settings.Topic.Name = "wjbna946-spigot";
                 //settings.ProducerConfig.BatchNumMessages = 1000;
                 //settings.ProducerConfig.QueueBufferingMaxMessages = 100;
                 //settings.ProducerConfig.MessageTimeoutMs = 100;
@@ -225,8 +335,8 @@ namespace Spigot.Tests
                 //settings.ProducerConfig.HeartbeatIntervalMs = 60000;
 
                 settings.ProducerConfig.BootstrapServers = brokers;
-                settings.ProducerConfig.SaslUsername = "wjbna946";
-                settings.ProducerConfig.SaslPassword = "szI-QN7RfwqKFaSt-p1AaBJRAGFMIMcx";
+                settings.ProducerConfig.SaslUsername = section.GetValue<string>("UserName");
+                settings.ProducerConfig.SaslPassword = section.GetValue<string>("Password");
 
                 settings.ProducerConfig.SaslMechanism = Confluent.Kafka.SaslMechanismType.ScramSha256;
                 settings.ProducerConfig.SecurityProtocol = Confluent.Kafka.SecurityProtocolType.Sasl_Ssl;
@@ -327,19 +437,9 @@ namespace Spigot.Tests
             Guid actual1 = Guid.Empty;
             Guid actual2 = Guid.Empty;
             var signal = new AutoResetEvent(false);
-
-            void OnStreamInstance1OnDataArrived(object sender, byte[] bytes)
-            {
-                if (new Guid(bytes) != expected1)
-                {
-                    return;
-                }
-
-                actual1 = new Guid(bytes);
-                signal.Set();
-            }
             void OnStreamInstance2OnDataArrived(object sender, byte[] bytes)
             {
+                logger.LogDebug($"{new Guid(bytes)} arrived on stream 2");
                 if (new Guid(bytes) != expected2)
                 {
                     return;
@@ -348,23 +448,35 @@ namespace Spigot.Tests
                 actual2 = new Guid(bytes);
                 signal.Set();
             }
+            void OnStreamInstance1OnDataArrived(object sender, byte[] bytes)
+            {
+                logger.LogDebug($"{new Guid(bytes)} arrived on stream 1");
+                if (new Guid(bytes) != expected1)
+                {
+                    return;
+                }
+
+                actual1 = new Guid(bytes);
+                signal.Set();
+            }
 
             streamInstance1.DataArrived += OnStreamInstance1OnDataArrived;
+            streamInstance2.DataArrived += OnStreamInstance2OnDataArrived;
 
             Thread.Sleep(100);
             var sw = Stopwatch.StartNew();
             Assert.True(streamInstance2.TrySend(dataToSend1));
-            signal.WaitOne(TimeSpan.FromSeconds(2));
+            signal.WaitOne(TimeSpan.FromSeconds(3));
             sw.Stop();
             logger.Log(LogLevel.Information, "Roundtrip by {1} in {0}", sw.Elapsed, streamInstance1.GetType().FullName);
             Assert.Equal(expected1, actual1);
-            streamInstance1.DataArrived -= OnStreamInstance1OnDataArrived;
-            streamInstance2.DataArrived += OnStreamInstance2OnDataArrived;
+
             signal.Reset();
             Thread.Sleep(100);
+
             sw = Stopwatch.StartNew();
             Assert.True(streamInstance1.TrySend(dataToSend2));
-            signal.WaitOne(TimeSpan.FromSeconds(2));
+            signal.WaitOne(TimeSpan.FromSeconds(3));
             sw.Stop();
             logger.Log(LogLevel.Information, "Roundtrip by {1} in {0}", sw.Elapsed, streamInstance2.GetType().FullName);
             Assert.Equal(expected2, actual2);
