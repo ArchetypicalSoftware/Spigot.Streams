@@ -6,6 +6,8 @@ using Archetypical.Software.Spigot;
 using Archetypical.Software.Spigot.Streams.AWS;
 using Archetypical.Software.Spigot.Streams.Azure;
 using Archetypical.Software.Spigot.Streams.GoogleCloud;
+using Archetypical.Software.Spigot.Streams.Kafka;
+using Confluent.Kafka;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -325,31 +327,25 @@ namespace Spigot.Tests
             var section = config.GetSection("Kafka");
             using (var kafka = await Archetypical.Software.Spigot.Streams.Kafka.KafkaStream.BuildAsync(settings =>
             {
+                settings.Logger = factory.CreateLogger<KafkaStream>();
                 var brokers = section.GetValue<string>("Brokers");
-                settings.Topic.Name = "wjbna946-spigot";
-                //settings.ProducerConfig.BatchNumMessages = 1000;
-                //settings.ProducerConfig.QueueBufferingMaxMessages = 100;
-                //settings.ProducerConfig.MessageTimeoutMs = 100;
-                //settings.ProducerConfig.Acks = 1;
-                //settings.ProducerConfig.SessionTimeoutMs = 6000;
-                //settings.ProducerConfig.HeartbeatIntervalMs = 60000;
-
+                settings.Topic.Name = "wjbna946-default";
                 settings.ProducerConfig.BootstrapServers = brokers;
                 settings.ProducerConfig.SaslUsername = section.GetValue<string>("UserName");
                 settings.ProducerConfig.SaslPassword = section.GetValue<string>("Password");
 
-                settings.ProducerConfig.SaslMechanism = Confluent.Kafka.SaslMechanismType.ScramSha256;
-                settings.ProducerConfig.SecurityProtocol = Confluent.Kafka.SecurityProtocolType.Sasl_Ssl;
-                //var cert = new FileInfo("karafka.crt");
-                //if (cert.Exists)
-                //{
-                //    settings.ProducerConfig.SslCertificateLocation = cert.FullName;
-                //}
-
-                settings.ProducerConfig.Debug = "generic,broker,topic,metadata,feature,queue,protocol,msg,security,all";
+                settings.ProducerConfig.SaslMechanism = SaslMechanismType.ScramSha256;
+                settings.ProducerConfig.SecurityProtocol = SecurityProtocolType.Sasl_Ssl;
+                var cert = new FileInfo("cacert.pem");
+                if (cert.Exists)
+                {
+                    settings.ProducerConfig.SslCaLocation = cert.FullName;
+                }
 
                 settings.ConsumerConfig = new Confluent.Kafka.ConsumerConfig(settings.ProducerConfig);
-                settings.ConsumerConfig.GroupId = "wjbna946-Spigot";
+                settings.ConsumerConfig.GroupId = Guid.NewGuid().ToString();
+                settings.ConsumerConfig.AutoOffsetReset = AutoOffsetResetType.Earliest;
+                settings.ConsumerConfig.EnableAutoCommit = true;
             }))
             {
                 TestStream(kafka);
@@ -420,7 +416,7 @@ namespace Spigot.Tests
             Thread.Sleep(100);
             var sw = Stopwatch.StartNew();
             Assert.True(stream.TrySend(dataToSend), "Failed to send message on the stream");
-            signal.WaitOne(TimeSpan.FromSeconds(2));
+            signal.WaitOne(TimeSpan.FromSeconds(10));
             sw.Stop();
             logger.Log(LogLevel.Information, "Roundtrip by {1} in {0}", sw.Elapsed, stream.GetType().FullName);
             Assert.Equal(expected, actual);

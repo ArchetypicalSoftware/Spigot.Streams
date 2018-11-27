@@ -1,4 +1,5 @@
 ﻿using Confluent.Kafka;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,9 +12,11 @@ namespace Archetypical.Software.Spigot.Streams.Kafka
 
         private CancellationTokenSource cancellationTokenSource;
 
-        private IConsumer<Ignore, byte[]> consumer;
+        private IConsumer<Null, byte[]> consumer;
 
         private IProducer<Null, byte[]> producer;
+
+        private ILogger<KafkaStream> Logger;
 
         private KafkaStream()
         {
@@ -45,33 +48,27 @@ namespace Archetypical.Software.Spigot.Streams.Kafka
         {
             try
             {
-                var waitHandle = new AutoResetEvent(false);
-                bool success = false; ;
-                Action<DeliveryReportResult<Null, byte[]>> handler = r =>
-                {
-                    success = !r.Error.IsError;
-                    waitHandle.Set();
-                };
-
+                Logger?.LogDebug("Preparing to send {0} bytes", data.Length);
                 var msg = new Message<Null, byte[]>() { Value = data };
-                producer.BeginProduce(_settings.Topic.Name, msg, handler);
-                producer.Flush(TimeSpan.FromMilliseconds(1000));
-                waitHandle.WaitOne(TimeSpan.FromMilliseconds(10000));
-                return success;
+                var result = producer.ProduceAsync(_settings.Topic.Name, msg).GetAwaiter().GetResult();
+                Logger?.LogDebug("Message sending successful. Message sent to {0}", result.TopicPartitionOffset);
+                return true;
             }
             catch (Exception e)
             {
+                Logger?.LogDebug(e, "Error {0}", e.Message);
                 return false;
             }
         }
 
         private async Task Init(KafkaSettings settings)
         {
+            Logger = settings.Logger;
             cancellationTokenSource = new CancellationTokenSource();
             _settings = settings;
             producer = new Producer<Null, byte[]>(settings.ProducerConfig);
             producer.OnError += OnError;
-            consumer = new Consumer<Ignore, byte[]>(settings.ConsumerConfig);
+            consumer = new Consumer<Null, byte[]>(settings.ConsumerConfig);
             consumer.OnError += OnError;
             //var client = new AdminClient(settings.ProducerConfig);
 
@@ -84,9 +81,7 @@ namespace Archetypical.Software.Spigot.Streams.Kafka
             //});
 
             consumer.Subscribe(settings.Topic.Name);
-            consumer?.Consume(TimeSpan.FromMilliseconds(100));
-
-            Task.Run(() => PollerJob());
+            Task.Factory.StartNew(PollerJob);
         }
 
         private void OnError(object sender, ErrorEvent e)
@@ -94,20 +89,39 @@ namespace Archetypical.Software.Spigot.Streams.Kafka
             throw new ArgumentException(e.Reason, e.Code.GetReason());
         }
 
+        private const int commitPeriod = 5;
+
         private void PollerJob()
         {
+            Logger?.LogInformation("Starting to consume from the {0}", _settings.Topic.Name);
             while (!cancellationTokenSource.IsCancellationRequested)
             {
                 try
                 {
-                    var consumed = consumer?.Consume(TimeSpan.FromMilliseconds(100));
+                    var consumed = consumer.Consume(TimeSpan.FromMilliseconds(500));
                     if (consumed != null)
                     {
+                        Logger?.LogDebug("Data arrived {0}", consumed.TopicPartitionOffset);
                         DataArrived?.Invoke(this, consumed.Value);
+                    }
+
+                    if (consumed != null
+                        && !_settings.ConsumerConfig.EnableAutoCommit.GetValueOrDefault()
+                        && consumed.Offset % commitPeriod == 0)
+                    {
+                        // The Commit method sends a "commit offsets" request to the Kafka
+                        // cluster and synchronously waits for the response. This is very
+                        // slow compared to the rate at which the consumer is capable of
+                        // consuming messages. A high performance application will typically
+                        // commit offsets relatively infrequently and be designed handle
+                        // duplicate messages in the event of failure.
+                        var committedOffsets = consumer.Commit(consumed);
+                        Logger?.LogDebug($"Committed offset: {0}", committedOffsets);
                     }
                 }
                 catch (Exception e)
                 {
+                    Logger?.LogDebug(e, "{0}", e.Message);
                     //
                 }
             }
@@ -116,6 +130,7 @@ namespace Archetypical.Software.Spigot.Streams.Kafka
         private void ReleaseUnmanagedResources()
         {
             cancellationTokenSource.Cancel();
+
             producer?.Dispose();
             consumer?.Dispose();
         }
