@@ -45,6 +45,8 @@ namespace Spigot.Tests
             config = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("config.json", optional: false, reloadOnChange: false)
+                .AddEnvironmentVariables("SPIGOT_")
+                //In environment variables, a colon separator may not work on all platforms. A double underscore (__) is supported by all platforms and is converted to a colon.
                 .Build();
         }
 
