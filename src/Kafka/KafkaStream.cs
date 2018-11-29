@@ -70,12 +70,13 @@ namespace Archetypical.Software.Spigot.Streams.Kafka
             producer.OnError += OnError;
             consumer = new Consumer<Null, byte[]>(settings.ConsumerConfig);
             consumer.OnError += OnError;
-            //var client = new AdminClient(settings.ProducerConfig);
+            //var client = new AdminClient(new AdminClientConfig { BootstrapServers = settings.ProducerConfig.BootstrapServers });
 
             //await client.CreateTopicsAsync(new List<TopicSpecification>{new TopicSpecification
             //{
             //    Name = settings.Topic.Name,
             //    NumPartitions = settings.Topic.NumberOfPartitions,
+            //    ReplicationFactor = settings.Topic.Replicas,
             //}}, new CreateTopicsOptions
             //{
             //});
@@ -89,7 +90,7 @@ namespace Archetypical.Software.Spigot.Streams.Kafka
             throw new ArgumentException(e.Reason, e.Code.GetReason());
         }
 
-        private const int commitPeriod = 5;
+        private const int commitPeriod = 10;
 
         private void PollerJob()
         {
@@ -99,24 +100,23 @@ namespace Archetypical.Software.Spigot.Streams.Kafka
                 try
                 {
                     var consumed = consumer.Consume(TimeSpan.FromMilliseconds(500));
-                    if (consumed != null)
+                    if (consumed != null && !consumed.Offset.IsSpecial)
                     {
                         Logger?.LogDebug("Data arrived {0}", consumed.TopicPartitionOffset);
                         DataArrived?.Invoke(this, consumed.Value);
-                    }
 
-                    if (consumed != null
-                        && !_settings.ConsumerConfig.EnableAutoCommit.GetValueOrDefault()
-                        && consumed.Offset % commitPeriod == 0)
-                    {
-                        // The Commit method sends a "commit offsets" request to the Kafka
-                        // cluster and synchronously waits for the response. This is very
-                        // slow compared to the rate at which the consumer is capable of
-                        // consuming messages. A high performance application will typically
-                        // commit offsets relatively infrequently and be designed handle
-                        // duplicate messages in the event of failure.
-                        var committedOffsets = consumer.Commit(consumed);
-                        Logger?.LogDebug($"Committed offset: {0}", committedOffsets);
+                        if (!_settings.ConsumerConfig.EnableAutoCommit.GetValueOrDefault()
+                            && consumed.Offset.Value % commitPeriod == 0)
+                        {
+                            // The Commit method sends a "commit offsets" request to the Kafka
+                            // cluster and synchronously waits for the response. This is very
+                            // slow compared to the rate at which the consumer is capable of
+                            // consuming messages. A high performance application will typically
+                            // commit offsets relatively infrequently and be designed handle
+                            // duplicate messages in the event of failure.
+                            var committedOffsets = consumer.Commit(consumed, cancellationTokenSource.Token);
+                            Logger?.LogDebug($"Committed offset: {0}", committedOffsets);
+                        }
                     }
                 }
                 catch (Exception e)
@@ -130,7 +130,7 @@ namespace Archetypical.Software.Spigot.Streams.Kafka
         private void ReleaseUnmanagedResources()
         {
             cancellationTokenSource.Cancel();
-
+            producer?.Flush(TimeSpan.FromSeconds(3));
             producer?.Dispose();
             consumer?.Dispose();
         }

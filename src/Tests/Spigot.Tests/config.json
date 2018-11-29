@@ -6,7 +6,8 @@
   "Azure": {
     "SasKeyName": "Spigot",
     "SasKey": "Z8fyvzywnE3V407/n1CtQPsCPtqz5KJgit7PsiFQeIE=",
-    "Endpoint": "https://spigot.servicebus.windows.net"
+    "Endpoint": "https://spigot.servicebus.windows.net",
+    "TopicName": "spigottopicname"
   },
   "Redis": {
     "Endpoint": "redis-13640.c10.us-east-1-2.ec2.cloud.redislabs.com:13640",
@@ -16,7 +17,8 @@
     "ApiKey": "bc0f5111-17c0-4e0f-8ca0-150758455ad3",
     "Brokers": "velomobile-01.srvs.cloudkafka.com:9094,velomobile-03.srvs.cloudkafka.com:9094,velomobile-02.srvs.cloudkafka.com:9094",
     "Password": "szI-QN7RfwqKFaSt-p1AaBJRAGFMIMcx",
-    "UserName": "wjbna946"
+    "UserName": "wjbna946",
+    "TopicName": "wjbna946-default"
   },
   "RabbitMQ": {
     "Hostname": "barnacle.rmq.cloudamqp.com",

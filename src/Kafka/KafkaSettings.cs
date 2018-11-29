@@ -29,7 +29,7 @@ namespace Archetypical.Software.Spigot.Streams.Kafka
 
             public int NumberOfPartitions { get; set; } = 3;
 
-            public int Replicas { get; set; } = 3;
+            public short Replicas { get; set; } = 3;
 
             public int RetentionBytes { get; set; } = 1024;
 

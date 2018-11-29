@@ -62,12 +62,7 @@ namespace Archetypical.Software.Spigot.Streams.AWS
                         Logger?.LogTrace("Got {0} records from shard {1}", records.Count, shard.ShardId);
                         foreach (var record in records)
                         {
-                            if (DataArrived != null)
-                            {
-                                await Task.Factory.FromAsync(
-                                    DataArrived.BeginInvoke(this, record.Data.ToArray(), DataArrived.EndInvoke,
-                                        null), DataArrived.EndInvoke, TaskCreationOptions.None);
-                            }
+                            DataArrived?.Invoke(this, record.Data.ToArray());
                         }
                     }
                     iteratorId = nextIterator;
