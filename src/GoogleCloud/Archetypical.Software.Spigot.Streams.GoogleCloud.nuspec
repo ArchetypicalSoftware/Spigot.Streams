@@ -14,7 +14,7 @@
     </dependencies>
   </metadata>
   <files>
-    <file src="AWS\bin\Release\netstandard2.0\Archetypical.Software.Spigot.Streams.GoogleCloud.dll" target="lib\netstandard2.0\Archetypical.Software.Spigot.Streams.GoogleCloud.dll" />
-    <file src="AWS\bin\Release\netstandard2.0\Archetypical.Software.Spigot.Streams.GoogleCloud.xml" target="lib\netstandard2.0\Archetypical.Software.Spigot.Streams.GoogleCloud.xml" />
+    <file src="bin\Release\netstandard2.0\Archetypical.Software.Spigot.Streams.GoogleCloud.dll" target="lib\netstandard2.0\Archetypical.Software.Spigot.Streams.GoogleCloud.dll" />
+    <file src="bin\Release\netstandard2.0\Archetypical.Software.Spigot.Streams.GoogleCloud.xml" target="lib\netstandard2.0\Archetypical.Software.Spigot.Streams.GoogleCloud.xml" />
   </files>
 </package>
