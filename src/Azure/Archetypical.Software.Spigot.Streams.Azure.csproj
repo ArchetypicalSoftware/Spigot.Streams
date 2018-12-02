@@ -4,6 +4,10 @@
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DocumentationFile>E:\projects\spigot.streams\src\Azure\Archetypical.Software.Spigot.Streams.Azure.xml</DocumentationFile>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Archetypical.Software.Spigot" Version="1.0.2" />
     <PackageReference Include="Microsoft.Azure.ServiceBus" Version="3.1.1" />

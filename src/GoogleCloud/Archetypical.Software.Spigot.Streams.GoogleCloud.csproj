@@ -4,6 +4,10 @@
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DocumentationFile>E:\projects\spigot.streams\src\GoogleCloud\Archetypical.Software.Spigot.Streams.GoogleCloud.xml</DocumentationFile>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Archetypical.Software.Spigot" Version="1.0.2" />
     <PackageReference Include="Google.Cloud.PubSub.V1" Version="1.0.0" />
