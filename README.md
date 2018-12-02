@@ -1,4 +1,4 @@
-# Spigot Serializers
+# Spigot Streams
 
 [![Build status](https://ci.appveyor.com/api/projects/status/kkfsn66v72ermq81/branch/master?svg=true)](https://ci.appveyor.com/project/ArchetypicalSoftware/spigot-streams/branch/master)
 
