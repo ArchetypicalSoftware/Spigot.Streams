@@ -129,8 +129,8 @@ namespace Archetypical.Software.Spigot.Streams.Kafka
 
         private void ReleaseUnmanagedResources()
         {
-            cancellationTokenSource.Cancel();
             producer?.Flush(TimeSpan.FromSeconds(3));
+            cancellationTokenSource.Cancel();
             producer?.Dispose();
             consumer?.Dispose();
         }

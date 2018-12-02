@@ -58,8 +58,14 @@ namespace Archetypical.Software.Spigot.Streams.Azure
                 {
                     Logger?.LogDebug("Handler is null, skipping Invocation");
                 }
-                DataArrived?.Invoke(this, msg.Body);
-                return Task.FromResult(0);
+                try
+                {
+                    DataArrived?.Invoke(this, msg.Body);
+                }
+                catch (Exception)
+                {
+                }
+                return Task.CompletedTask;
             }, messageHandlerOptions);
         }
 
