@@ -4,6 +4,10 @@
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DocumentationFile>bin\Release\netstandard2.0\Archetypical.Software.Spigot.Streams.ZeroMQ.xml</DocumentationFile>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Archetypical.Software.Spigot" Version="1.0.2" />
     <PackageReference Include="NetMQ" Version="4.0.0.1" />

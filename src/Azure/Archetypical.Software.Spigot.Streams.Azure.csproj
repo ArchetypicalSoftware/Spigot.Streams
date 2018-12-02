@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DocumentationFile>E:\projects\spigot.streams\src\Azure\Archetypical.Software.Spigot.Streams.Azure.xml</DocumentationFile>
+    <DocumentationFile>bin\Release\netstandard2.0\Archetypical.Software.Spigot.Streams.Azure.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
