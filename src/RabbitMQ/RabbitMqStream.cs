@@ -75,7 +75,7 @@ namespace Archetypical.Software.Spigot.Streams.RabbitMq
             consumer = new EventingBasicConsumer(channel);
             consumer.Received += (model, ea) =>
             {
-                DataArrived?.Invoke(this, ea.Body);
+                DataArrived?.Invoke(this, ea.Body.ToArray());
 
                 channel.BasicAck(deliveryTag: ea.DeliveryTag, multiple: false);
             };
