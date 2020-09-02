@@ -11,10 +11,10 @@ namespace Archetypical.Software.Spigot.Streams.GoogleCloud
         {
             var settings = new GoogleCloudSettings();
             builder(settings);
-            src.Services.AddSingleton<ISpigotStream>(
+            src.Services.AddSingleton<ISpigotStream, GoogleCloudPubSubStream>(
                 p =>
                 {
-                    var stream = p.GetService<GoogleCloudPubSubStream>();
+                    var stream = new GoogleCloudPubSubStream(p.GetService<ILogger<GoogleCloudPubSubStream>>());
                     stream.InitAsync(settings).GetAwaiter().GetResult();
                     return stream;
                 });

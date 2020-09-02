@@ -11,10 +11,10 @@ namespace Archetypical.Software.Spigot.Streams.Kafka
         {
             var settings = new KafkaSettings();
             builder(settings);
-            src.Services.AddSingleton<ISpigotStream>(
+            src.Services.AddSingleton<ISpigotStream, KafkaStream>(
                 p =>
                 {
-                    var stream = p.GetService<KafkaStream>();
+                    var stream = new KafkaStream(p.GetService<ILogger<KafkaStream>>());
                     stream.InitAsync(settings).GetAwaiter().GetResult();
                     return stream;
                 });

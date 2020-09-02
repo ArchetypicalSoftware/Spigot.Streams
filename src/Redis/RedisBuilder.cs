@@ -11,10 +11,10 @@ namespace Archetypical.Software.Spigot.Streams.Redis
         {
             var settings = new RedisSettings();
             builder(settings);
-            src.Services.AddSingleton<ISpigotStream>(
+            src.Services.AddSingleton<ISpigotStream, RedisStream>(
                 p =>
                 {
-                    var stream = p.GetService<RedisStream>();
+                    var stream = new RedisStream(p.GetService<ILogger<RedisStream>>());
                     stream.InitAsync(settings).GetAwaiter().GetResult();
                     return stream;
                 });

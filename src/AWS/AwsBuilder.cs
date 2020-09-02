@@ -11,10 +11,10 @@ namespace Archetypical.Software.Spigot.Streams.AWS
         {
             var settings = new SnsStreamSettings();
             builder(settings);
-            src.Services.AddSingleton<ISpigotStream>(
+            src.Services.AddSingleton<ISpigotStream, SnsStream>(
                 p =>
                 {
-                    var stream = p.GetService<SnsStream>();
+                    var stream = new SnsStream(p.GetService<ILogger<SnsStream>>());
                     stream.InitAsync(settings).GetAwaiter().GetResult();
                     return stream;
                 });
@@ -25,10 +25,10 @@ namespace Archetypical.Software.Spigot.Streams.AWS
         {
             var settings = new KinesisSettings();
             builder(settings);
-            src.Services.AddSingleton<ISpigotStream>(
+            src.Services.AddSingleton<ISpigotStream, KinesisStream>(
                 p =>
                 {
-                    var stream = p.GetService<KinesisStream>();
+                    var stream = new KinesisStream(p.GetService<ILogger<KinesisStream>>());
                     stream.InitAsync(settings).GetAwaiter().GetResult();
                     return stream;
                 });

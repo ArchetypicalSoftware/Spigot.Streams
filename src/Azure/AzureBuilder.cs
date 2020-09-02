@@ -11,10 +11,10 @@ namespace Archetypical.Software.Spigot.Streams.Azure
         {
             var settings = new AzureSettings();
             builder(settings);
-            src.Services.AddSingleton<ISpigotStream>(
+            src.Services.AddSingleton<ISpigotStream, AzureServiceBusStream>(
                 p =>
                 {
-                    var stream = p.GetService<AzureServiceBusStream>();
+                    var stream = new AzureServiceBusStream(p.GetService<ILogger<AzureServiceBusStream>>());
                     stream.InitAsync(settings).GetAwaiter().GetResult();
                     return stream;
                 });

@@ -8,8 +8,10 @@ using RabbitMQ.Client;
 using System;
 using System.ComponentModel;
 using System.Threading.Tasks;
+using Archetypical.Software.Spigot;
 using Archetypical.Software.Spigot.Extensions;
 using Archetypical.Software.Spigot.Streams.ZeroMQ;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 using Xunit.Abstractions;
 using Stream = Archetypical.Software.Spigot.Streams.Redis.RedisStream;
@@ -22,29 +24,34 @@ namespace Spigot.Tests
         {
         }
 
-        //[Fact]
-        //[Category("Azure")]
-        //public async Task Azure_ServiceBus_Basic_Test()
-        //{
-        //    var block = GetBuilder();
-        //    block.AddAzureServiceBus(builder =>
-        //    {
-        //        var section = block.Configuration.GetSection("Azure");
-        //        builder.Logger = factory.CreateLogger<AzureServiceBusStream>();
-        //        builder.TopicName = section.GetValue<string>("TopicName");
-        //        builder.ConnectionStringBuilder = new ServiceBusConnectionStringBuilder
-        //        {
-        //            SasKeyName = section.GetValue<string>("SasKeyName"),
-        //            SasKey = section.GetValue<string>("SasKey"),
-        //            TransportType = TransportType.Amqp,
-        //            Endpoint = section.GetValue<string>("Endpoint")
-        //        };
-        //    });
-        //    block.Build();
-        //    using (var azureStream = block.Stream)
+        [Fact]
+        [Category("Azure")]
+        public async Task Azure_ServiceBus_Basic_Test()
+        {
+            var configuration = new ConfigurationBuilder().Build();
+            var services = new ServiceCollection();
+            services.AddLogging();
+            var block = services.AddSpigot(configuration).WithFriendlyName("test");
 
-        //        TestStream(azureStream);
-        //}
+            block.AddAzureServiceBus(builder =>
+            {
+                var section = block.Configuration.GetSection("Azure");
+                builder.Logger = factory.CreateLogger<AzureServiceBusStream>();
+                builder.TopicName = section.GetValue<string>("TopicName");
+
+                //builder.ConnectionStringBuilder = new ServiceBusConnectionStringBuilder
+                //{
+                //    SasKeyName = section.GetValue<string>("SasKeyName"),
+                //    SasKey = section.GetValue<string>("SasKey"),
+                //    TransportType = TransportType.Amqp,
+                //    Endpoint = section.GetValue<string>("Endpoint")
+                //};
+            });
+            block.Build();
+            using (var azureStream = block.Services.BuildServiceProvider().GetService<ISpigotStream>())
+
+                TestStream(azureStream);
+        }
 
         //[Fact]
         //[Category("Azure")]

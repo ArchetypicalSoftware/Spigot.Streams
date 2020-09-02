@@ -1,6 +1,7 @@
 ﻿using System;
 using Archetypical.Software.Spigot.Extensions;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Archetypical.Software.Spigot.Streams.KubeMQ
 {
@@ -10,10 +11,10 @@ namespace Archetypical.Software.Spigot.Streams.KubeMQ
         {
             var settings = new KubeMqSettings();
             builder(settings);
-            src.Services.AddSingleton<ISpigotStream>(
+            src.Services.AddSingleton<ISpigotStream, KubeMqStream>(
                 p =>
                 {
-                    var stream = p.GetService<KubeMqStream>();
+                    var stream = new KubeMqStream(p.GetService<ILogger<KubeMqStream>>());
                     stream.InitAsync(settings).GetAwaiter().GetResult();
                     return stream;
                 });

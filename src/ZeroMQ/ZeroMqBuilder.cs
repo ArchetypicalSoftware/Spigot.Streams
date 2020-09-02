@@ -1,6 +1,7 @@
 ﻿using System;
 using Archetypical.Software.Spigot.Extensions;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Archetypical.Software.Spigot.Streams.ZeroMQ
 {
@@ -10,10 +11,10 @@ namespace Archetypical.Software.Spigot.Streams.ZeroMQ
         {
             var settings = new ZeroMqSettings();
             builder(settings);
-            src.Services.AddSingleton<ISpigotStream>(
+            src.Services.AddSingleton<ISpigotStream, ZeroMqStream>(
                 p =>
                 {
-                    var stream = p.GetService<ZeroMqStream>();
+                    var stream = new ZeroMqStream(p.GetService<ILogger<ZeroMqStream>>());
                     stream.Init(settings);
                     return stream;
                 });
