@@ -5,7 +5,7 @@
     <version>$version$</version>
     <authors>Archetypical.Software</authors>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-	<iconUrl>https://lh4.googleusercontent.com/6LW8mKOegkdeiGAuEOUE3_jLDm4eI0XLImLw4ntXLSj7t2X4688lIPE8zQTrY_pUmMXLneuctEzbzaMjIizR=w1920-h948</iconUrl>
+    <iconUrl>https://lh4.googleusercontent.com/6LW8mKOegkdeiGAuEOUE3_jLDm4eI0XLImLw4ntXLSj7t2X4688lIPE8zQTrY_pUmMXLneuctEzbzaMjIizR=w1920-h948</iconUrl>
     <description>
       A Spigot
     </description>
@@ -15,7 +15,7 @@
     </dependencies>
   </metadata>
   <files>
-    <file src="bin\Release\netstandard2.0\Archetypical.Software.Spigot.Streams.GoogleCloud.dll" target="lib\netstandard2.0\Archetypical.Software.Spigot.Streams.GoogleCloud.dll" />
-    <file src="bin\Release\netstandard2.0\Archetypical.Software.Spigot.Streams.GoogleCloud.xml" target="lib\netstandard2.0\Archetypical.Software.Spigot.Streams.GoogleCloud.xml" />
+    <file src="bin\Release\netstandard2.1\Archetypical.Software.Spigot.Streams.GoogleCloud.dll" target="lib\netstandard2.1\Archetypical.Software.Spigot.Streams.GoogleCloud.dll" />
+    <file src="bin\Release\netstandard2.1\Archetypical.Software.Spigot.Streams.GoogleCloud.xml" target="lib\netstandard2.1\Archetypical.Software.Spigot.Streams.GoogleCloud.xml" />
   </files>
 </package>
