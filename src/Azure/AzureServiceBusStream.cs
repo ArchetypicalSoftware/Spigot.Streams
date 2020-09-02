@@ -1,15 +1,36 @@
 ﻿using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+
+[assembly: InternalsVisibleTo("Spigot.Tests")]
 
 namespace Archetypical.Software.Spigot.Streams.Azure
 {
     public class AzureServiceBusStream : ISpigotStream, IDisposable
     {
         private TopicClient client;
-        private ISubscriptionClient subscriptionClient;
         private ILogger<AzureServiceBusStream> Logger;
+        private ISubscriptionClient subscriptionClient;
+
+        internal AzureServiceBusStream(ILogger<AzureServiceBusStream> logger)
+        {
+            Logger = logger;
+        }
+
+        ~AzureServiceBusStream()
+        {
+            ReleaseUnmanagedResources();
+        }
+
+        public event EventHandler<byte[]> DataArrived;
+
+        public void Dispose()
+        {
+            ReleaseUnmanagedResources();
+            GC.SuppressFinalize(this);
+        }
 
         public bool TrySend(byte[] data)
         {
@@ -27,13 +48,23 @@ namespace Archetypical.Software.Spigot.Streams.Azure
             }
         }
 
-        public static async Task<AzureServiceBusStream> BuildAsync(Action<AzureSettings> builder)
+        private Task ExceptionReceivedHandler(ExceptionReceivedEventArgs arg)
         {
-            var settings = new AzureSettings();
-            builder(settings);
-            var instance = new AzureServiceBusStream();
-            await instance.Init(settings);
-            return instance;
+            throw new NotImplementedException();
+        }
+
+        internal async Task InitAsync(AzureSettings settings)
+        {
+            Logger = settings.Logger;
+            settings.ConnectionStringBuilder.EntityPath =
+                settings.ConnectionStringBuilder.EntityPath ?? settings.TopicName;
+            var sb = new ServiceBusConnection(settings.ConnectionStringBuilder);
+
+            client = new TopicClient(sb, settings.TopicName, settings.RetryPolicy);
+            subscriptionClient = new SubscriptionClient(sb, settings.TopicName, settings.SubscriptionName
+                , settings.ReceiveMode, settings.RetryPolicy);
+
+            RegisterOnMessageHandlerAndReceiveMessages();
         }
 
         private void RegisterOnMessageHandlerAndReceiveMessages()
@@ -69,46 +100,10 @@ namespace Archetypical.Software.Spigot.Streams.Azure
             }, messageHandlerOptions);
         }
 
-        private Task ExceptionReceivedHandler(ExceptionReceivedEventArgs arg)
-        {
-            throw new NotImplementedException();
-        }
-
-        private async Task Init(AzureSettings settings)
-        {
-            Logger = settings.Logger;
-            settings.ConnectionStringBuilder.EntityPath =
-                settings.ConnectionStringBuilder.EntityPath ?? settings.TopicName;
-            var sb = new ServiceBusConnection(settings.ConnectionStringBuilder);
-
-            client = new TopicClient(sb, settings.TopicName, settings.RetryPolicy);
-            subscriptionClient = new SubscriptionClient(sb, settings.TopicName, settings.SubscriptionName
-                , settings.ReceiveMode, settings.RetryPolicy);
-
-            RegisterOnMessageHandlerAndReceiveMessages();
-        }
-
-        private AzureServiceBusStream()
-        {
-        }
-
-        public event EventHandler<byte[]> DataArrived;
-
         private void ReleaseUnmanagedResources()
         {
             subscriptionClient?.CloseAsync().GetAwaiter().GetResult();
             client?.CloseAsync().GetAwaiter().GetResult();
-        }
-
-        public void Dispose()
-        {
-            ReleaseUnmanagedResources();
-            GC.SuppressFinalize(this);
-        }
-
-        ~AzureServiceBusStream()
-        {
-            ReleaseUnmanagedResources();
         }
     }
 }

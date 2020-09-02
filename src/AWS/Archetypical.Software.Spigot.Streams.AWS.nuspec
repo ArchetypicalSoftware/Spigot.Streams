@@ -5,6 +5,7 @@
     <version>$version$</version>
     <authors>Archetypical.Software</authors>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <iconUrl>https://lh4.googleusercontent.com/6LW8mKOegkdeiGAuEOUE3_jLDm4eI0XLImLw4ntXLSj7t2X4688lIPE8zQTrY_pUmMXLneuctEzbzaMjIizR=w1920-h948</iconUrl>
     <description>
       A Spigot Stream implementation that interfaces with AWS and supports both SNS
       (https://docs.aws.amazon.com/sdk-for-net/v2/developer-guide/sns-apis-intro.html)
@@ -19,7 +20,7 @@
       Amazon Kinesis makes it easy to collect, process, and analyze real-time, streaming data so you can get timely insights and react quickly to new information. Amazon Kinesis offers key capabilities to cost-effectively process streaming data at any scale, along with the flexibility to choose the tools that best suit the requirements of your application.
     </description>
     <dependencies>
-      <dependency id="Archetypical.Software.Spigot" version="1.0.2" />
+      <dependency id="Archetypical.Software.Spigot" version="2.0.0" />
       <dependency id="AWSSDK.Core" version="3.3.29" />
       <dependency id="AWSSDK.Kinesis" version="3.3.6" />
       <dependency id="AWSSDK.SimpleNotificationService" version="3.3.2" />

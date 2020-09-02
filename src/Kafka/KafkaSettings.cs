@@ -9,8 +9,6 @@ namespace Archetypical.Software.Spigot.Streams.Kafka
     /// </summary>
     public class KafkaSettings
     {
-        public ILogger<KafkaStream> Logger { get; set; }
-
         /// <summary>
         /// At a minimum, 'bootstrap.servers' and 'group.id' must be specified.
         /// </summary>

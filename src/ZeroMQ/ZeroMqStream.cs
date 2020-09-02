@@ -1,37 +1,38 @@
-﻿using NetMQ;
+﻿using Microsoft.Extensions.Logging;
+using NetMQ;
 using NetMQ.Sockets;
 using System;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+
+[assembly: InternalsVisibleTo("Spigot.Tests")]
 
 namespace Archetypical.Software.Spigot.Streams.ZeroMQ
 {
     /// <summary>
     /// To connect this stream, point to an XPUB, XSUB sockets. See https://netmq.readthedocs.io/en/latest/xpub-xsub/ for an example
     /// </summary>
-    public class Stream : ISpigotStream, IDisposable
+    public class ZeroMqStream : ISpigotStream, IDisposable
     {
+        private readonly ILogger<ZeroMqStream> logger;
         private ZeroMqSettings _settings;
-        private CancellationTokenSource tokenSource;
-        private Task SubscribingTask;
         private PublisherSocket publisher;
         private SubscriberSocket subscriber;
+        private Task SubscribingTask;
+        private CancellationTokenSource tokenSource;
 
-        ~Stream()
+        internal ZeroMqStream(ILogger<ZeroMqStream> logger)
+        {
+            this.logger = logger;
+        }
+
+        ~ZeroMqStream()
         {
             ReleaseUnmanagedResources();
         }
 
         public event EventHandler<byte[]> DataArrived;
-
-        public static async Task<Stream> BuildAsync(Action<ZeroMqSettings> builder)
-        {
-            var settings = new ZeroMqSettings();
-            builder(settings);
-            var instance = new Stream();
-            await instance.Init(settings);
-            return instance;
-        }
 
         public void Dispose()
         {
@@ -83,7 +84,7 @@ namespace Archetypical.Software.Spigot.Streams.ZeroMQ
             socketOptions.TcpKeepaliveInterval = settingsOptions.TcpKeepaliveInterval;
         }
 
-        private async Task Init(ZeroMqSettings settings)
+        internal void Init(ZeroMqSettings settings)
         {
             tokenSource = new CancellationTokenSource();
             _settings = settings;

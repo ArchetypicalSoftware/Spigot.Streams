@@ -1,0 +1,10 @@
+﻿version: '2.1'
+services:
+  rabbitmq:
+    image: rabbitmq:3.8.2-alpine
+    ports:
+      - "4369:4369"
+      - "5671:5671"
+      - "5672:5672"
+      - "25672:25672"
+     

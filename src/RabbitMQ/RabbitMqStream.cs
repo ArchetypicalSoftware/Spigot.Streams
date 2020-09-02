@@ -1,13 +1,18 @@
-﻿using RabbitMQ.Client;
+﻿using Microsoft.Extensions.Logging;
+using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+
+[assembly: InternalsVisibleTo("Spigot.Tests")]
 
 namespace Archetypical.Software.Spigot.Streams.RabbitMq
 {
     public class RabbitMqStream : ISpigotStream, IDisposable
     {
+        private readonly ILogger<RabbitMqStream> logger;
         private CancellationTokenSource _cancellationTokenSource;
         private RabbitMqSettings _settings;
 
@@ -17,8 +22,9 @@ namespace Archetypical.Software.Spigot.Streams.RabbitMq
 
         private EventingBasicConsumer consumer;
 
-        private RabbitMqStream()
+        internal RabbitMqStream(ILogger<RabbitMqStream> logger)
         {
+            this.logger = logger;
         }
 
         ~RabbitMqStream()
@@ -27,15 +33,6 @@ namespace Archetypical.Software.Spigot.Streams.RabbitMq
         }
 
         public event EventHandler<byte[]> DataArrived;
-
-        public static async Task<RabbitMqStream> BuildAsync(Action<RabbitMqSettings> builder)
-        {
-            var settings = new RabbitMqSettings();
-            builder(settings);
-            var instance = new RabbitMqStream();
-            await instance.Init(settings);
-            return instance;
-        }
 
         public void Dispose()
         {
@@ -61,7 +58,7 @@ namespace Archetypical.Software.Spigot.Streams.RabbitMq
             }
         }
 
-        private async Task Init(RabbitMqSettings settings)
+        internal async Task InitAsync(RabbitMqSettings settings)
         {
             _cancellationTokenSource = new CancellationTokenSource();
             _settings = settings;

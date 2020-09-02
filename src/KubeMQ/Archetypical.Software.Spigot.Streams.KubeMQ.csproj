@@ -4,14 +4,11 @@
     <TargetFramework>netstandard2.1</TargetFramework>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DocumentationFile>bin\Release\netstandard2.0\Archetypical.Software.Spigot.Streams.ZeroMQ.xml</DocumentationFile>
-  </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="Archetypical.Software.Spigot" Version="2.0.0" />
+    <PackageReference Include="KubeMQ.SDK.csharp" Version="1.0.8" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.0" />
-    <PackageReference Include="NetMQ" Version="4.0.0.207" />
   </ItemGroup>
+
 </Project>

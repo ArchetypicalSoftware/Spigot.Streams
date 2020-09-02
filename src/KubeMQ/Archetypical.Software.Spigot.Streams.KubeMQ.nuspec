@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
-    <id>Archetypical.Software.Spigot.Streams.RabbitMq</id>
+    <id>Archetypical.Software.Spigot.Streams.KubeMq</id>
     <version>$version$</version>
     <authors>Archetypical.Software</authors>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
 	<iconUrl>https://lh4.googleusercontent.com/6LW8mKOegkdeiGAuEOUE3_jLDm4eI0XLImLw4ntXLSj7t2X4688lIPE8zQTrY_pUmMXLneuctEzbzaMjIizR=w1920-h948</iconUrl>
     <description>
-      A Spigot Stream implementation utilizing Rabbit MQ.
+      A Spigot Stream implementation utilizing KubeMQ.
     </description>
     <dependencies>
       <dependency id="Archetypical.Software.Spigot" version="2.0.0" />
     </dependencies>
   </metadata>
   <files>
-    <file src="bin\Release\netstandard2.0\Archetypical.Software.Spigot.Streams.RabbitMQ.dll" target="lib\netstandard2.0\Archetypical.Software.Spigot.Streams.RabbitMQ.dll" />
-    <file src="bin\Release\netstandard2.0\Archetypical.Software.Spigot.Streams.RabbitMQ.xml" target="lib\netstandard2.0\Archetypical.Software.Spigot.Streams.RabbitMQ.xml" />
+    <file src="bin\Release\netstandard2.0\Archetypical.Software.Spigot.Streams.KubeMQ.dll" target="lib\netstandard2.0\Archetypical.Software.Spigot.Streams.KubeMQ.dll" />
+    <file src="bin\Release\netstandard2.0\Archetypical.Software.Spigot.Streams.KubeMQ.xml" target="lib\netstandard2.0\Archetypical.Software.Spigot.Streams.KubeMQ.xml" />
   </files>
 </package>

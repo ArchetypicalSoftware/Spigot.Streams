@@ -3,8 +3,12 @@ using Google.Protobuf;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Grpc.Core;
+
+[assembly: InternalsVisibleTo("Spigot.Tests")]
 
 namespace Archetypical.Software.Spigot.Streams.GoogleCloud
 {
@@ -12,16 +16,16 @@ namespace Archetypical.Software.Spigot.Streams.GoogleCloud
     {
         private CancellationTokenSource _cancellationTokenSource;
 
+        private ILogger<GoogleCloudPubSubStream> Logger;
         private PublisherServiceApiClient publisher;
-
+        private Task subscriberTask;
         private SubscriberClient subscriber;
 
         private TopicName topicName;
 
-        private ILogger<GoogleCloudPubSubStream> Logger;
-
-        private GoogleCloudPubSubStream()
+        internal GoogleCloudPubSubStream(ILogger<GoogleCloudPubSubStream> logger)
         {
+            Logger = logger;
         }
 
         ~GoogleCloudPubSubStream()
@@ -30,15 +34,6 @@ namespace Archetypical.Software.Spigot.Streams.GoogleCloud
         }
 
         public event EventHandler<byte[]> DataArrived;
-
-        public static async Task<GoogleCloudPubSubStream> BuildAsync(Action<GoogleCloudSettings> builder)
-        {
-            var settings = new GoogleCloudSettings();
-            builder(settings);
-            var instance = new GoogleCloudPubSubStream();
-            await instance.Init(settings);
-            return instance;
-        }
 
         public void Dispose()
         {
@@ -77,15 +72,23 @@ namespace Archetypical.Software.Spigot.Streams.GoogleCloud
             return SubscriberClient.Reply.Ack;
         }
 
-        private async Task Init(GoogleCloudSettings settings)
+        internal async Task InitAsync(GoogleCloudSettings settings)
         {
-            Logger = settings.Logger;
-
             _cancellationTokenSource = new CancellationTokenSource();
+            var subscriptionName = new SubscriptionName(settings.ProjectId, settings.SubscriptionName);
+            SubscriberServiceApiClient api;
+
             // Instantiates a client
-
-            publisher = PublisherServiceApiClient.Create();
-
+            if (settings.Channel == null)
+            {
+                publisher = await PublisherServiceApiClient.CreateAsync();
+                api = await SubscriberServiceApiClient.CreateAsync();
+            }
+            else
+            {
+                publisher = PublisherServiceApiClient.Create(settings.Channel, settings.PublisherServiceApiSettings);
+                api = SubscriberServiceApiClient.Create(settings.Channel, settings.SubscriberServiceApiSettings);
+            }
             // The name for the new topic
 
             topicName = new TopicName(settings.ProjectId, settings.TopicId);
@@ -93,17 +96,15 @@ namespace Archetypical.Software.Spigot.Streams.GoogleCloud
             // Creates the new topic
             try
             {
-                Topic topic = publisher.CreateTopic(topicName);
+                var topic = publisher.CreateTopic(topicName);
                 Logger?.LogInformation($"Topic {topic.Name} created.");
             }
-            catch (Grpc.Core.RpcException e)
-                when (e.Status.StatusCode == Grpc.Core.StatusCode.AlreadyExists)
+            catch (RpcException e)
+                when (e.Status.StatusCode == StatusCode.AlreadyExists)
             {
                 Logger?.LogInformation($"Topic {topicName} already exists.");
             }
-
-            var subscriptionName = new SubscriptionName(settings.ProjectId, settings.SubscriptionName);
-            var api = await SubscriberServiceApiClient.CreateAsync();
+            catch (Exception) { }
 
             try
             {
@@ -116,7 +117,7 @@ namespace Archetypical.Software.Spigot.Streams.GoogleCloud
 
             subscriber = await SubscriberClient.CreateAsync(subscriptionName, settings.ClientCreationSettings,
                 settings.SubscriberClientSettings);
-            subscriber.StartAsync(HandleMessageAsync).ContinueWith(t =>
+            subscriberTask = subscriber.StartAsync(HandleMessageAsync).ContinueWith(t =>
                 {
                     Logger?.LogError(t.Exception, "An error attempting to handle messages occurred. {0}",
                         t.Exception.Message);
@@ -126,7 +127,7 @@ namespace Archetypical.Software.Spigot.Streams.GoogleCloud
         private void ReleaseUnmanagedResources()
         {
             subscriber?.StopAsync(_cancellationTokenSource.Token).GetAwaiter().GetResult();
-            _cancellationTokenSource.Cancel();
+            _cancellationTokenSource?.Cancel();
         }
     }
 }

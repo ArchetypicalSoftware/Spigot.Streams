@@ -6,75 +6,62 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+
+[assembly: InternalsVisibleTo("Spigot.Tests")]
 
 namespace Archetypical.Software.Spigot.Streams.AWS
 {
     public class KinesisStream : ISpigotStream, IDisposable
     {
-        private const string PartionKey = "Spigot Stream";
-        private AmazonKinesisClient _client;
+        private const string PartitionKey = "Spigot Stream";
         private CancellationTokenSource _cancellationTokenSource;
-        private KinesisSettings _settings;
+        private AmazonKinesisClient _client;
         private CreateStreamResponse _deliveryStream;
         private Task _listeningTask;
-        private ILogger<KinesisStream> Logger;
+        private KinesisSettings _settings;
+        private ILogger<KinesisStream> logger;
 
-        public static async Task<KinesisStream> BuildAsync(Action<KinesisSettings> builder)
+        internal KinesisStream(ILogger<KinesisStream> logger)
         {
-            var settings = new KinesisSettings();
-            builder(settings);
-            var instance = new KinesisStream();
-            await instance.Init(settings);
-            return instance;
+            this.logger = logger;
         }
 
-        private async Task StartListening(List<Shard> shards)
+        ~KinesisStream()
         {
-            await Task.WhenAll(shards.Select(ListenToShard));
+            ReleaseUnmanagedResources();
         }
 
-        private async Task ListenToShard(Shard shard)
+        public event EventHandler<byte[]> DataArrived;
+
+        public void Dispose()
         {
-            Logger?.LogDebug("Preparing to listen to Shard {0}", shard.ShardId);
-            while (!_cancellationTokenSource.IsCancellationRequested)
+            ReleaseUnmanagedResources();
+            GC.SuppressFinalize(this);
+        }
+
+        public bool TrySend(byte[] data)
+        {
+            var putRecordRequest = new PutRecordRequest();
+            logger?.LogTrace($"Attempting to send {data.Length} bytes to {_settings.StreamName} [partition:{PartitionKey}]");
+            using (var mem = new MemoryStream(data))
             {
-                var getIterator = new GetShardIteratorRequest
-                {
-                    ShardId = shard.ShardId,
-                    StreamName = _settings.StreamName,
-                    ShardIteratorType = ShardIteratorType.LATEST,
-                };
-                var iterator = await _client.GetShardIteratorAsync(getIterator);
-                var iteratorId = iterator.ShardIterator;
-                Logger?.LogTrace("Got iterator {0} for shard {1}", iteratorId, shard.ShardId);
-                while (!_cancellationTokenSource.IsCancellationRequested && !string.IsNullOrEmpty(iteratorId))
-                {
-                    var getRequest = new GetRecordsRequest { Limit = 1000, ShardIterator = iteratorId };
-
-                    var getResponse = await _client.GetRecordsAsync(getRequest);
-                    var nextIterator = getResponse.NextShardIterator;
-                    var records = getResponse.Records;
-
-                    if (records.Count > 0)
-                    {
-                        Logger?.LogTrace("Got {0} records from shard {1}", records.Count, shard.ShardId);
-                        foreach (var record in records)
-                        {
-                            DataArrived?.Invoke(this, record.Data.ToArray());
-                        }
-                    }
-                    iteratorId = nextIterator;
-                }
+                putRecordRequest.Data = mem;
+                putRecordRequest.StreamName = _settings.StreamName;
+                putRecordRequest.PartitionKey = PartitionKey;
+                // Put record into the DeliveryStream
+                var putResponse = _client.PutRecordAsync(putRecordRequest).GetAwaiter().GetResult();
+                logger?.LogTrace("Returned {0}", putResponse.HttpStatusCode);
+                return putResponse.HttpStatusCode == HttpStatusCode.OK;
             }
         }
 
-        private async Task Init(KinesisSettings settings)
+        internal async Task InitAsync(KinesisSettings settings)
         {
             _settings = settings;
-            Logger = settings.Logger;
-            Logger?.LogInformation("Building a new Kinesis stream");
+            logger?.LogInformation("Building a new Kinesis stream");
             _cancellationTokenSource = new CancellationTokenSource();
 
             _client = new AmazonKinesisClient(settings.Credentials, settings.ClientConfig);
@@ -85,7 +72,7 @@ namespace Archetypical.Software.Spigot.Streams.AWS
             });
             if (streams.Shards != null && streams.Shards.Any())
             {
-                Logger?.LogDebug("Found {0} previously created shards on stream {1}", streams.Shards.Count, settings.StreamName);
+                logger?.LogDebug("Found {0} previously created shards on stream {1}", streams.Shards.Count, settings.StreamName);
                 _listeningTask = StartListening(streams.Shards);
                 return;
             }
@@ -95,7 +82,7 @@ namespace Archetypical.Software.Spigot.Streams.AWS
                 ShardCount = settings.ShardCount,
                 StreamName = settings.StreamName
             });
-            Logger?.LogDebug("Successfully created stream {0} with {1} shard", settings.StreamName,
+            logger?.LogDebug("Successfully created stream {0} with {1} shard", settings.StreamName,
                 settings.ShardCount);
             var stream = await _client.DescribeStreamAsync(new DescribeStreamRequest
             {
@@ -105,27 +92,40 @@ namespace Archetypical.Software.Spigot.Streams.AWS
             _listeningTask = StartListening(stream.StreamDescription.Shards);
         }
 
-        private KinesisStream()
+        private async Task ListenToShard(Shard shard)
         {
-        }
-
-        public bool TrySend(byte[] data)
-        {
-            var putRecordRequest = new PutRecordRequest();
-            Logger?.LogTrace($"Attempting to send {data.Length} bytes to {_settings.StreamName} [partition:{PartionKey}]");
-            using (var mem = new MemoryStream(data))
+            logger?.LogDebug("Preparing to listen to Shard {0}", shard.ShardId);
+            while (!_cancellationTokenSource.IsCancellationRequested)
             {
-                putRecordRequest.Data = mem;
-                putRecordRequest.StreamName = _settings.StreamName;
-                putRecordRequest.PartitionKey = PartionKey;
-                // Put record into the DeliveryStream
-                var putResponse = _client.PutRecordAsync(putRecordRequest).GetAwaiter().GetResult();
-                Logger?.LogTrace("Returned {0}", putResponse.HttpStatusCode);
-                return putResponse.HttpStatusCode == HttpStatusCode.OK;
+                var getIterator = new GetShardIteratorRequest
+                {
+                    ShardId = shard.ShardId,
+                    StreamName = _settings.StreamName,
+                    ShardIteratorType = ShardIteratorType.LATEST,
+                };
+                var iterator = await _client.GetShardIteratorAsync(getIterator);
+                var iteratorId = iterator.ShardIterator;
+                logger?.LogTrace("Got iterator {0} for shard {1}", iteratorId, shard.ShardId);
+                while (!_cancellationTokenSource.IsCancellationRequested && !string.IsNullOrEmpty(iteratorId))
+                {
+                    var getRequest = new GetRecordsRequest { Limit = 1000, ShardIterator = iteratorId };
+
+                    var getResponse = await _client.GetRecordsAsync(getRequest);
+                    var nextIterator = getResponse.NextShardIterator;
+                    var records = getResponse.Records;
+
+                    if (records.Count > 0)
+                    {
+                        logger?.LogTrace("Got {0} records from shard {1}", records.Count, shard.ShardId);
+                        foreach (var record in records)
+                        {
+                            DataArrived?.Invoke(this, record.Data.ToArray());
+                        }
+                    }
+                    iteratorId = nextIterator;
+                }
             }
         }
-
-        public event EventHandler<byte[]> DataArrived;
 
         private void ReleaseUnmanagedResources()
         {
@@ -133,15 +133,9 @@ namespace Archetypical.Software.Spigot.Streams.AWS
             _cancellationTokenSource.Cancel();
         }
 
-        public void Dispose()
+        private async Task StartListening(List<Shard> shards)
         {
-            ReleaseUnmanagedResources();
-            GC.SuppressFinalize(this);
-        }
-
-        ~KinesisStream()
-        {
-            ReleaseUnmanagedResources();
+            await Task.WhenAll(shards.Select(ListenToShard));
         }
     }
 }

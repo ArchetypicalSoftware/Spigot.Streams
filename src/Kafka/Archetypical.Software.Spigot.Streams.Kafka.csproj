@@ -1,7 +1,7 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>netstandard2.1</TargetFramework>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -9,9 +9,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Archetypical.Software.Spigot" Version="1.0.2" />
-    <PackageReference Include="Confluent.Kafka" Version="1.0.0-beta2" />
-    <PackageReference Include="librdkafka.redist" Version="1.0.0-RC2" />
+    <PackageReference Include="Archetypical.Software.Spigot" Version="2.0.0" />
+    <PackageReference Include="Confluent.Kafka" Version="1.3.0" />
+    <PackageReference Include="librdkafka.redist" Version="1.3.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.0" />
   </ItemGroup>
-
 </Project>

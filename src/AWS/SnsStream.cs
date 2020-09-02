@@ -7,52 +7,48 @@ using System.IO;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Archetypical.Software.Spigot.Streams.AWS
 {
     public class SnsStream : ISpigotStream, IDisposable
     {
+        private readonly ILogger<SnsStream> logger;
+        private static readonly BlockingCollection<Tuple<HttpListenerRequest, Message>> Requests = new BlockingCollection<Tuple<HttpListenerRequest, Message>>();
+        private CancellationTokenSource _cancellationTokenSource;
         private AmazonSimpleNotificationServiceClient _client;
         private HttpListener _httpListener;
-        private CancellationTokenSource _cancellationTokenSource;
-        private Topic _topic;
         private Task _listentingTask;
         private Task _processingTask;
         private SubscribeResponse _subscription;
+        private Topic _topic;
 
-        public static async Task<SnsStream> BuildAsync(Action<SnsStreamSettings> builder)
+        internal SnsStream(ILogger<SnsStream> logger)
         {
-            var settings = new SnsStreamSettings();
-            builder(settings);
-            var instance = new SnsStream();
-            await instance.Init(settings);
-            return instance;
+            this.logger = logger;
         }
 
-        private static readonly BlockingCollection<Tuple<HttpListenerRequest, Message>> Requests = new BlockingCollection<Tuple<HttpListenerRequest, Message>>();
-
-        private void StartProcessing()
+        ~SnsStream()
         {
-            foreach (var request in Requests.GetConsumingEnumerable(_cancellationTokenSource.Token))
+            ReleaseUnmanagedResources();
+        }
+
+        public event EventHandler<byte[]> DataArrived;
+
+        public void Dispose()
+        {
+            ReleaseUnmanagedResources();
+            GC.SuppressFinalize(this);
+        }
+
+        public bool TrySend(byte[] data)
+        {
+            var result = _client.PublishAsync(new PublishRequest
             {
-                if (request.Item2.IsSubscriptionType)
-                {
-                    var response = ConfirmSubscriptionAsync(request.Item2).GetAwaiter().GetResult();
-                    if (response.HttpStatusCode == HttpStatusCode.OK)
-                        _subscription.SubscriptionArn = response.SubscriptionArn;
-                    continue;
-                }
-
-                if (request.Item2.IsNotificationType)
-                {
-                    Task.Run(() => ProcessNotification(request.Item2));
-
-                    continue;
-                }
-
-                if (request.Item2.IsUnsubscriptionType)
-                    continue;
-            }
+                Message = Convert.ToBase64String(data),
+                TopicArn = _topic.TopicArn
+            }).GetAwaiter().GetResult();
+            return !string.IsNullOrWhiteSpace(result.MessageId);
         }
 
         private async Task<ConfirmSubscriptionResponse> ConfirmSubscriptionAsync(Message confirmationRequest)
@@ -66,49 +62,7 @@ namespace Archetypical.Software.Spigot.Streams.AWS
             });
         }
 
-        private async Task<UnsubscribeResponse> UnSubscribeAsync()
-        {
-            if (_subscription == null || _subscription.SubscriptionArn != "pending confirmation") return null;
-            return await _client.UnsubscribeAsync(new UnsubscribeRequest
-            {
-                SubscriptionArn = _subscription.SubscriptionArn
-            });
-        }
-
-        private async Task ProcessNotification(Message message)
-        {
-            if (DataArrived == null) return;
-            await Task.Factory.FromAsync(
-                DataArrived.BeginInvoke(
-                    this,
-                    Convert.FromBase64String(message.MessageText),
-                    DataArrived.EndInvoke,
-                    null),
-                DataArrived.EndInvoke,
-                TaskCreationOptions.None);
-        }
-
-        private async Task StartListening()
-        {
-            while (!_cancellationTokenSource.IsCancellationRequested)
-            {
-                var context = await _httpListener.GetContextAsync();
-                var request = context.Request;
-                using (var stream = new StreamReader(request.InputStream))
-                {
-                    var body = await stream.ReadToEndAsync();
-                    var message = Message.ParseMessage(body);
-                    if (message.IsMessageSignatureValid()) // Only accept valid messages
-                        Requests.Add(new Tuple<HttpListenerRequest, Message>(request, message));
-                }
-                //Return a valid response indicating we received the message successfully
-                context.Response.StatusCode = 200;
-                context.Response.ContentLength64 = 0;
-                context.Response.OutputStream.Close();
-            }
-        }
-
-        private async Task Init(SnsStreamSettings settings)
+        internal async Task InitAsync(SnsStreamSettings settings)
         {
             _cancellationTokenSource = new CancellationTokenSource();
 
@@ -151,21 +105,18 @@ namespace Archetypical.Software.Spigot.Streams.AWS
             });
         }
 
-        private SnsStream()
+        private async Task ProcessNotification(Message message)
         {
+            if (DataArrived == null) return;
+            await Task.Factory.FromAsync(
+                DataArrived.BeginInvoke(
+                    this,
+                    Convert.FromBase64String(message.MessageText),
+                    DataArrived.EndInvoke,
+                    null),
+                DataArrived.EndInvoke,
+                TaskCreationOptions.None);
         }
-
-        public bool TrySend(byte[] data)
-        {
-            var result = _client.PublishAsync(new PublishRequest
-            {
-                Message = Convert.ToBase64String(data),
-                TopicArn = _topic.TopicArn
-            }).GetAwaiter().GetResult();
-            return !string.IsNullOrWhiteSpace(result.MessageId);
-        }
-
-        public event EventHandler<byte[]> DataArrived;
 
         private void ReleaseUnmanagedResources()
         {
@@ -175,15 +126,57 @@ namespace Archetypical.Software.Spigot.Streams.AWS
             _httpListener?.Stop();
         }
 
-        public void Dispose()
+        private async Task StartListening()
         {
-            ReleaseUnmanagedResources();
-            GC.SuppressFinalize(this);
+            while (!_cancellationTokenSource.IsCancellationRequested)
+            {
+                var context = await _httpListener.GetContextAsync();
+                var request = context.Request;
+                using (var stream = new StreamReader(request.InputStream))
+                {
+                    var body = await stream.ReadToEndAsync();
+                    var message = Message.ParseMessage(body);
+                    if (message.IsMessageSignatureValid()) // Only accept valid messages
+                        Requests.Add(new Tuple<HttpListenerRequest, Message>(request, message));
+                }
+                //Return a valid response indicating we received the message successfully
+                context.Response.StatusCode = 200;
+                context.Response.ContentLength64 = 0;
+                context.Response.OutputStream.Close();
+            }
         }
 
-        ~SnsStream()
+        private void StartProcessing()
         {
-            ReleaseUnmanagedResources();
+            foreach (var request in Requests.GetConsumingEnumerable(_cancellationTokenSource.Token))
+            {
+                if (request.Item2.IsSubscriptionType)
+                {
+                    var response = ConfirmSubscriptionAsync(request.Item2).GetAwaiter().GetResult();
+                    if (response.HttpStatusCode == HttpStatusCode.OK)
+                        _subscription.SubscriptionArn = response.SubscriptionArn;
+                    continue;
+                }
+
+                if (request.Item2.IsNotificationType)
+                {
+                    Task.Run(() => ProcessNotification(request.Item2));
+
+                    continue;
+                }
+
+                if (request.Item2.IsUnsubscriptionType)
+                    continue;
+            }
+        }
+
+        private async Task<UnsubscribeResponse> UnSubscribeAsync()
+        {
+            if (_subscription == null || _subscription.SubscriptionArn != "pending confirmation") return null;
+            return await _client.UnsubscribeAsync(new UnsubscribeRequest
+            {
+                SubscriptionArn = _subscription.SubscriptionArn
+            });
         }
     }
 }

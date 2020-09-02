@@ -1,0 +1,6 @@
+﻿version: '2.1'
+services:
+  googlecloud:
+    image: archetypical/gcp/pubsub
+    ports:
+      - "8085:8085"

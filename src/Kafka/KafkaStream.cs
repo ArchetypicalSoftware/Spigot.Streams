@@ -1,42 +1,36 @@
 ﻿using Confluent.Kafka;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Confluent.Kafka.Admin;
+
+[assembly: InternalsVisibleTo("Spigot.Tests")]
 
 namespace Archetypical.Software.Spigot.Streams.Kafka
 {
     public class KafkaStream : ISpigotStream, IDisposable
     {
+        private const int commitPeriod = 10;
         private KafkaSettings _settings;
 
         private CancellationTokenSource cancellationTokenSource;
 
         private IConsumer<Null, byte[]> consumer;
 
+        private ILogger<KafkaStream> Logger;
         private IProducer<Null, byte[]> producer;
 
-        private ILogger<KafkaStream> Logger;
-
-        private KafkaStream()
+        internal KafkaStream(ILogger<KafkaStream> logger)
         {
+            Logger = logger;
         }
 
-        ~KafkaStream()
-        {
-            ReleaseUnmanagedResources();
-        }
+        ~KafkaStream() => ReleaseUnmanagedResources();
 
         public event EventHandler<byte[]> DataArrived;
-
-        public async static Task<KafkaStream> BuildAsync(Action<KafkaSettings> builder)
-        {
-            var settings = new KafkaSettings();
-            builder(settings);
-            var instance = new KafkaStream();
-            await instance.Init(settings);
-            return instance;
-        }
 
         public void Dispose()
         {
@@ -61,36 +55,42 @@ namespace Archetypical.Software.Spigot.Streams.Kafka
             }
         }
 
-        private async Task Init(KafkaSettings settings)
+        internal async Task InitAsync(KafkaSettings settings)
         {
-            Logger = settings.Logger;
             cancellationTokenSource = new CancellationTokenSource();
             _settings = settings;
-            producer = new Producer<Null, byte[]>(settings.ProducerConfig);
-            producer.OnError += OnError;
-            consumer = new Consumer<Null, byte[]>(settings.ConsumerConfig);
-            consumer.OnError += OnError;
-            //var client = new AdminClient(new AdminClientConfig { BootstrapServers = settings.ProducerConfig.BootstrapServers });
 
-            //await client.CreateTopicsAsync(new List<TopicSpecification>{new TopicSpecification
-            //{
-            //    Name = settings.Topic.Name,
-            //    NumPartitions = settings.Topic.NumberOfPartitions,
-            //    ReplicationFactor = settings.Topic.Replicas,
-            //}}, new CreateTopicsOptions
-            //{
-            //});
+            producer = new ProducerBuilder<Null, byte[]>(settings.ProducerConfig).SetErrorHandler(OnError).Build();
+
+            consumer = new ConsumerBuilder<Null, byte[]>(settings.ConsumerConfig).SetErrorHandler(OnError).Build();
+
+            var client = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = settings.ProducerConfig.BootstrapServers }).Build();
+
+            try
+            {
+                await client.CreateTopicsAsync(new List<TopicSpecification>{new TopicSpecification
+            {
+                Name = settings.Topic.Name,
+                NumPartitions = settings.Topic.NumberOfPartitions,
+                ReplicationFactor = settings.Topic.Replicas,
+            }}, new CreateTopicsOptions
+            {
+            });
+            }
+            catch (CreateTopicsException)
+            {
+                Logger.LogInformation("Topic already exists... continuing");
+            }
 
             consumer.Subscribe(settings.Topic.Name);
-            Task.Factory.StartNew(PollerJob);
+            _ = Task.Factory.StartNew(PollerJob, cancellationTokenSource.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
         }
 
-        private void OnError(object sender, ErrorEvent e)
+        private void OnError(object sender, Error e)
         {
-            throw new ArgumentException(e.Reason, e.Code.GetReason());
+            var eventId = new EventId((int)e.Code, e.Code.GetReason());
+            Logger.LogError(eventId, e.Reason);
         }
-
-        private const int commitPeriod = 10;
 
         private void PollerJob()
         {
@@ -114,15 +114,14 @@ namespace Archetypical.Software.Spigot.Streams.Kafka
                             // consuming messages. A high performance application will typically
                             // commit offsets relatively infrequently and be designed handle
                             // duplicate messages in the event of failure.
-                            var committedOffsets = consumer.Commit(consumed, cancellationTokenSource.Token);
-                            Logger?.LogDebug($"Committed offset: {0}", committedOffsets);
+                            consumer.Commit(consumed);
+                            Logger?.LogDebug($"Committed offset: {consumed.Offset.Value}");
                         }
                     }
                 }
                 catch (Exception e)
                 {
                     Logger?.LogDebug(e, "{0}", e.Message);
-                    //
                 }
             }
         }
