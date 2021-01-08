@@ -79,15 +79,25 @@ namespace Archetypical.Software.Spigot.Streams.GoogleCloud
             SubscriberServiceApiClient api;
 
             // Instantiates a client
-            if (settings.Channel == null)
+            if (settings.Endpoint == null || settings.ChannelCredentials == null)
             {
                 publisher = await PublisherServiceApiClient.CreateAsync();
                 api = await SubscriberServiceApiClient.CreateAsync();
             }
             else
             {
-                publisher = PublisherServiceApiClient.Create(settings.Channel, settings.PublisherServiceApiSettings);
-                api = SubscriberServiceApiClient.Create(settings.Channel, settings.SubscriberServiceApiSettings);
+                publisher = await new PublisherServiceApiClientBuilder()
+                {
+                    Settings = settings.PublisherServiceApiSettings,
+                    Endpoint = settings.Endpoint,
+                    ChannelCredentials = settings.ChannelCredentials
+                }.BuildAsync();
+                api = await new SubscriberServiceApiClientBuilder()
+                {
+                    Settings = settings.SubscriberServiceApiSettings,
+                    Endpoint = settings.Endpoint,
+                    ChannelCredentials = settings.ChannelCredentials
+                }.BuildAsync();
             }
             // The name for the new topic
 

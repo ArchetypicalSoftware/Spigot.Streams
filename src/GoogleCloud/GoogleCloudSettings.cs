@@ -21,9 +21,11 @@ namespace Archetypical.Software.Spigot.Streams.GoogleCloud
         public string ProjectId { get; set; }
 
         public string TopicId { get; set; } = "archetypical_software_spigot";
-        public Channel Channel { get; set; }
+
         public PublisherServiceApiSettings PublisherServiceApiSettings { get; set; } = null;
 
         public SubscriberServiceApiSettings SubscriberServiceApiSettings { get; set; } = null;
+        public string Endpoint { get; set; }
+        public ChannelCredentials ChannelCredentials { get; set; } = ChannelCredentials.Insecure;
     }
 }

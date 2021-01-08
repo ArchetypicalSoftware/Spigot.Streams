@@ -28,7 +28,7 @@ namespace Spigot.Tests
             var settings = new GoogleCloudSettings
             {
                 ProjectId = "ArchetypicalSoftwareIntegrationTests",
-                Channel = new Channel("localhost:8085", ChannelCredentials.Insecure)
+                Endpoint = "localhost:8085"
             };
             await stream.InitAsync(settings);
             return stream;

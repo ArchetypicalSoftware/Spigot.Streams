@@ -9,10 +9,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Archetypical.Software.Spigot" Version="2.0.0" />
-    <PackageReference Include="AWSSDK.Core" Version="3.5.1.5" />
-    <PackageReference Include="AWSSDK.Kinesis" Version="3.5.0.7" />
-    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.5.0.7" />
+    <PackageReference Include="Archetypical.Software.Spigot" Version="2.0.15-pre01" />
+    <PackageReference Include="AWSSDK.Core" Version="3.5.1.57" />
+    <PackageReference Include="AWSSDK.Kinesis" Version="3.5.0.57" />
+    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.5.1.28" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.6" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.6" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />

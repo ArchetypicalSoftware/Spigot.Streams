@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Archetypical.Software.Spigot" Version="2.0.0" />
+    <PackageReference Include="Archetypical.Software.Spigot" Version="2.0.15-pre01" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.6" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.6" />
     <PackageReference Include="RabbitMQ.Client" Version="6.2.1" />

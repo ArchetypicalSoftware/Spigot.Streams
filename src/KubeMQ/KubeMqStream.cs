@@ -4,7 +4,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using KubeMQ.SDK.csharp.Events;
 using KubeMQ.SDK.csharp.Subscription;
-using KubeMqSender = KubeMQ.SDK.csharp.Events.LowLevel.Sender;
 using Microsoft.Extensions.Logging;
 
 [assembly: InternalsVisibleTo("Spigot.Tests")]
@@ -15,26 +14,30 @@ namespace Archetypical.Software.Spigot.Streams.KubeMQ
     {
         private readonly ILogger<KubeMqStream> logger;
         private CancellationTokenSource source = new CancellationTokenSource();
-        private KubeMqSender sender;
+        private Channel sender;
         private Subscriber subscriber;
 
         internal KubeMqStream(ILogger<KubeMqStream> logger)
         {
             this.logger = logger;
-
-            CancellationToken token = source.Token;
         }
 
         public bool TrySend(byte[] data)
         {
-            throw new NotImplementedException();
+            var result = sender.SendEvent(new Event
+            {
+                Body = data,
+            });
+            if (!result.Sent)
+            {
+                logger.LogError(result.EventID, $"An error occurred attempting to send the event: {result.Error}");
+            }
+            return result.Sent;
         }
 
         private void HandleIncomingEvents(EventReceive @event)
-
         {
             if (@event != null)
-
             {
                 DataArrived?.Invoke(this, @event.Body);
             }
@@ -72,7 +75,9 @@ namespace Archetypical.Software.Spigot.Streams.KubeMQ
 
         public void Dispose()
         {
-            throw new NotImplementedException();
+            sender.ClosesEventStreamAsync();
+            source.Cancel();
+            source.Dispose();
         }
 
         public async Task InitAsync(KubeMqSettings settings)
@@ -80,19 +85,16 @@ namespace Archetypical.Software.Spigot.Streams.KubeMQ
             subscriber = new Subscriber(settings.ServerAddress, logger);
 
             SubscribeRequest subscribeRequest = CreateSubscribeRequest(settings);
-
+            await Task.Yield();
             subscriber.SubscribeToEvents(subscribeRequest, HandleIncomingEvents, HandleIncomingError, source.Token);
-            sender = new KubeMqSender(settings.ServerAddress, logger);
+            sender = new Channel(new ChannelParameters
+            {
+                ChannelName = settings.ChannelName,
+                ClientID = subscribeRequest.ClientID,
+                KubeMQAddress = settings.ServerAddress,
+                Store = true,
+                Logger = logger
+            });
         }
-    }
-
-    public class KubeMqSettings
-    {
-        public SubscribeType SubscriptionType { get; set; } = SubscribeType.SubscribeTypeUndefined;
-        public EventsStoreType EventsStoreType { get; set; } = EventsStoreType.Undefined;
-        public int TypeValue { get; set; } = 0;
-        public string ChannelName { get; set; } = "Spigot";
-        public string Group { get; set; } = "";
-        public string ServerAddress { get; set; }
     }
 }

@@ -1,0 +1,11 @@
+﻿version: '2.1'
+services:
+  localstack:
+    image: kubemq/kubemq
+    ports:
+      - "9090:9090" #insecure rest endpoint
+      - "50000:50000" #grpc endpoint
+      - "8080:8080" #web endpoint
+    environment:
+      - KUBEMQ_TOKEN=52a76d8e-eded-4227-9f3c-0544a2a4c19f
+     

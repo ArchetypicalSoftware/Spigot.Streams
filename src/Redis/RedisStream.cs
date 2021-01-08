@@ -36,6 +36,7 @@ namespace Archetypical.Software.Spigot.Streams.Redis
 
         public bool TrySend(byte[] data)
         {
+            logger.LogTrace("Sending bytes");
             return _subscriber.Publish(_settings.TopicName, data, _settings.CommandFlags) > 0;
         }
 
@@ -47,11 +48,16 @@ namespace Archetypical.Software.Spigot.Streams.Redis
 
             await _subscriber.SubscribeAsync(settings.TopicName, (channel, value) =>
             {
+                logger.LogTrace($"Data received from channel {channel}...");
                 if (DataArrived != null)
                 {
-                    byte[] bytes = (RedisValue)value;
+                    byte[] bytes = value;
+
                     if (bytes != null)
+                    {
+                        logger.LogTrace("Value parsed as byte[]");
                         DataArrived.Invoke(this, bytes);
+                    }
                 }
             }, settings.CommandFlags);
         }

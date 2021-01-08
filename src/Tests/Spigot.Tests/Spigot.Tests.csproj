@@ -44,6 +44,7 @@
     <ProjectReference Include="..\..\Azure\Archetypical.Software.Spigot.Streams.Azure.csproj" />
     <ProjectReference Include="..\..\GoogleCloud\Archetypical.Software.Spigot.Streams.GoogleCloud.csproj" />
     <ProjectReference Include="..\..\Kafka\Archetypical.Software.Spigot.Streams.Kafka.csproj" />
+    <ProjectReference Include="..\..\KubeMQ\Archetypical.Software.Spigot.Streams.KubeMQ.csproj" />
     <ProjectReference Include="..\..\RabbitMQ\Archetypical.Software.Spigot.Streams.RabbitMq.csproj" />
     <ProjectReference Include="..\..\Redis\Archetypical.Software.Spigot.Streams.Redis.csproj" />
     <ProjectReference Include="..\..\ZeroMQ\Archetypical.Software.Spigot.Streams.ZeroMQ.csproj" />

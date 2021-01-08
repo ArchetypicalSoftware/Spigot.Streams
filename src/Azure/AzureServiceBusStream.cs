@@ -8,15 +8,24 @@ using System.Threading.Tasks;
 
 namespace Archetypical.Software.Spigot.Streams.Azure
 {
+    /// <summary>
+    /// Connects Spigot with Azure Service Bus
+    /// </summary>
     public class AzureServiceBusStream : ISpigotStream, IDisposable
     {
-        private TopicClient client;
-        private ILogger<AzureServiceBusStream> Logger;
-        private ISubscriptionClient subscriptionClient;
+        private readonly ITopicClient _client;
+        private readonly ILogger<AzureServiceBusStream> _logger;
+        private readonly ISubscriptionClient _subscriptionClient;
 
-        internal AzureServiceBusStream(ILogger<AzureServiceBusStream> logger)
+        public AzureServiceBusStream(
+            ILogger<AzureServiceBusStream> logger,
+            ITopicClient topicClient,
+            ISubscriptionClient subscriptionClient)
         {
-            Logger = logger;
+            _logger = logger;
+            _client = topicClient;
+            _subscriptionClient = subscriptionClient;
+            RegisterOnMessageHandlerAndReceiveMessages();
         }
 
         ~AzureServiceBusStream()
@@ -36,14 +45,14 @@ namespace Archetypical.Software.Spigot.Streams.Azure
         {
             try
             {
-                Logger?.LogDebug("Attempting to send {0} bytes", data.Length);
+                _logger?.LogDebug("Attempting to send {0} bytes", data.Length);
                 var msg = new Message(data);
-                client.SendAsync(msg).GetAwaiter().GetResult();
+                _client.SendAsync(msg).GetAwaiter().GetResult();
                 return true;
             }
             catch (Exception e)
             {
-                Logger?.LogDebug("Error : {0}", e.Message);
+                _logger?.LogDebug("Error : {0}", e.Message);
                 return false;
             }
         }
@@ -51,20 +60,6 @@ namespace Archetypical.Software.Spigot.Streams.Azure
         private Task ExceptionReceivedHandler(ExceptionReceivedEventArgs arg)
         {
             throw new NotImplementedException();
-        }
-
-        internal async Task InitAsync(AzureSettings settings)
-        {
-            Logger = settings.Logger;
-            settings.ConnectionStringBuilder.EntityPath =
-                settings.ConnectionStringBuilder.EntityPath ?? settings.TopicName;
-            var sb = new ServiceBusConnection(settings.ConnectionStringBuilder);
-
-            client = new TopicClient(sb, settings.TopicName, settings.RetryPolicy);
-            subscriptionClient = new SubscriptionClient(sb, settings.TopicName, settings.SubscriptionName
-                , settings.ReceiveMode, settings.RetryPolicy);
-
-            RegisterOnMessageHandlerAndReceiveMessages();
         }
 
         private void RegisterOnMessageHandlerAndReceiveMessages()
@@ -82,19 +77,20 @@ namespace Archetypical.Software.Spigot.Streams.Azure
             };
 
             // Register the function that processes messages.
-            subscriptionClient.RegisterMessageHandler((msg, token) =>
+            _subscriptionClient.RegisterMessageHandler((msg, token) =>
             {
-                Logger?.LogDebug("Data received with message Id {0}", msg.MessageId);
+                _logger?.LogDebug("Data received with message Id {0}", msg.MessageId);
                 if (DataArrived == null)
                 {
-                    Logger?.LogDebug("Handler is null, skipping Invocation");
+                    _logger?.LogDebug("Handler is null, skipping Invocation");
                 }
                 try
                 {
                     DataArrived?.Invoke(this, msg.Body);
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    _logger?.LogError(ex, ex.Message);
                 }
                 return Task.CompletedTask;
             }, messageHandlerOptions);
@@ -102,8 +98,8 @@ namespace Archetypical.Software.Spigot.Streams.Azure
 
         private void ReleaseUnmanagedResources()
         {
-            subscriptionClient?.CloseAsync().GetAwaiter().GetResult();
-            client?.CloseAsync().GetAwaiter().GetResult();
+            _subscriptionClient?.CloseAsync().GetAwaiter().GetResult();
+            _client?.CloseAsync().GetAwaiter().GetResult();
         }
     }
 }

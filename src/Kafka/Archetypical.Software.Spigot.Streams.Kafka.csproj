@@ -9,9 +9,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Archetypical.Software.Spigot" Version="2.0.0" />
-    <PackageReference Include="Confluent.Kafka" Version="1.5.1" />
-    <PackageReference Include="librdkafka.redist" Version="1.5.0" />
+    <PackageReference Include="Archetypical.Software.Spigot" Version="2.0.15-pre01" />
+    <PackageReference Include="Confluent.Kafka" Version="1.5.3" />
+    <PackageReference Include="librdkafka.redist" Version="1.5.3" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.6" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.6" />
   </ItemGroup>

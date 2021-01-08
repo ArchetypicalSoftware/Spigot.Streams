@@ -31,22 +31,12 @@ namespace Spigot.Tests
             var configuration = new ConfigurationBuilder().Build();
             var services = new ServiceCollection();
             services.AddLogging();
-            var block = services.AddSpigot(configuration).WithFriendlyName("test");
+            var block =
+                services
+                .AddSpigot(configuration)
+                .WithFriendlyName("test");
 
-            block.AddAzureServiceBus(builder =>
-            {
-                var section = block.Configuration.GetSection("Azure");
-                builder.Logger = factory.CreateLogger<AzureServiceBusStream>();
-                builder.TopicName = section.GetValue<string>("TopicName");
-
-                //builder.ConnectionStringBuilder = new ServiceBusConnectionStringBuilder
-                //{
-                //    SasKeyName = section.GetValue<string>("SasKeyName"),
-                //    SasKey = section.GetValue<string>("SasKey"),
-                //    TransportType = TransportType.Amqp,
-                //    Endpoint = section.GetValue<string>("Endpoint")
-                //};
-            });
+            //block.AddAzureServiceBus(builder =>{});
             block.Build();
             using (var azureStream = block.Services.BuildServiceProvider().GetService<ISpigotStream>())
 
