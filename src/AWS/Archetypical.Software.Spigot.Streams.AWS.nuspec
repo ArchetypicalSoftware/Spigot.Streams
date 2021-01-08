@@ -8,7 +8,7 @@
     <license type="expression">LGPL-3.0-or-later</license>
     <repository type="git" url="https://github.com/ArchetypicalSoftware/Spigot.Streams"></repository>
     <projectUrl>https://archetypical.software/Product/Detail/Spigot</projectUrl>
-    <icon>icon.png</icon>
+    <icon>Icon.png</icon>
     <description>
       A Spigot Stream implementation that interfaces with AWS and supports both SNS
       (https://docs.aws.amazon.com/sdk-for-net/v2/developer-guide/sns-apis-intro.html)
