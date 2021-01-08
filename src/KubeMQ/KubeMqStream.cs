@@ -84,7 +84,7 @@ namespace Archetypical.Software.Spigot.Streams.KubeMQ
         {
             subscriber = new Subscriber(settings.ServerAddress, logger);
 
-            SubscribeRequest subscribeRequest = CreateSubscribeRequest(settings);
+            var subscribeRequest = CreateSubscribeRequest(settings);
             await Task.Yield();
             subscriber.SubscribeToEvents(subscribeRequest, HandleIncomingEvents, HandleIncomingError, source.Token);
             sender = new Channel(new ChannelParameters
